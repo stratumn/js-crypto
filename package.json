@@ -1,7 +1,7 @@
 {
   "name": "@stratumn/js-crypto",
   "version": "0.0.1",
-  "description": "Borwser compatible crypto",
+  "description": "Browser compatible crypto",
   "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -27,6 +27,6 @@
     "@stratumn/eslint-config": "^0.0.12",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.7.0"
+    "babel-preset-es2015": "^6.24.1"
   }
 }
