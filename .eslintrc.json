@@ -1,0 +1,3 @@
+{
+  "extends": "@stratumn/eslint-config"
+}
