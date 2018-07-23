@@ -28,7 +28,7 @@ export class KeyPair {
   });
 }
 
-class PrivateKey {
+export class PrivateKey {
   constructor(pemPrivateKey = null, password = null) {
     if (pemPrivateKey) {
       this._key = this.loadPrivateKey(pemPrivateKey, password);
@@ -87,7 +87,7 @@ class PrivateKey {
   };
 }
 
-class PublicKey {
+export class PublicKey {
   constructor(publicKey = null, pemPublicKey = null) {
     if (publicKey) {
       this._key = publicKey;
