@@ -4,7 +4,7 @@ import {
   ED25519PrivateKey,
   ed25519PrivateKeyFromAsn1,
   ED25519PublicKey
-} from './ed25519';
+} from './curve25519';
 
 import { RSAPrivateKey, RSAPublicKey } from './rsa';
 
