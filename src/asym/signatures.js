@@ -1,19 +1,24 @@
-import { rsa, md, util, asn1, pem, pki, ed25519, oids } from 'node-forge';
+import { rsa, md, util, asn1, pem, pki, oids } from 'node-forge';
+import {
+  ED25519_OID,
+  ED25519PrivateKey,
+  ed25519PrivateKeyFromAsn1,
+  ED25519PublicKey
+} from './ed25519';
 
-const SIGNING_ALGO_RSA = { label: 'RSA', oid: oids.rsaEncryption };
+const PRIVATE_KEY_PEM_LABEL = 'PRIVATE KEY';
+const PUBLIC_KEY_PEM_LABEL = 'PUBLIC KEY';
+const SIGNATURE_PEM_LABEL = 'MESSAGE';
 
-const ED25519_OID = '1.3.101.112';
-const SIGNING_ALGO_ED25519 = { label: 'ED25519', oid: ED25519_OID };
+const SIGNING_ALGO_RSA = { name: 'RSA', oid: oids.rsaEncryption };
+const SIGNING_ALGO_ED25519 = { name: 'ED25519', oid: ED25519_OID };
 
-export const SIGNING_ALGOS = [
-  SIGNING_ALGO_RSA.label,
-  SIGNING_ALGO_ED25519.label
-];
+export const SIGNING_ALGOS = [SIGNING_ALGO_RSA.name, SIGNING_ALGO_ED25519.name];
 
 export class SigningKeyPair {
   constructor(opts) {
     // opts should contain either pemPrivateKey and password to load a key
-    // of algo to generate a new one.
+    // or algo to generate a new one.
     this._privateKey = new SigningPrivateKey(opts);
     this._publicKey = this._privateKey.publicKey();
   }
@@ -32,6 +37,10 @@ export class SigningKeyPair {
   });
 }
 
+// ============================================================================
+// ====                           PRIVATE KEY                              ====
+// ============================================================================
+
 export class SigningPrivateKey {
   constructor({ algo, pemPrivateKey, password }) {
     if (pemPrivateKey) {
@@ -48,16 +57,12 @@ export class SigningPrivateKey {
     this._algo = algo;
 
     switch (algo) {
-      case SIGNING_ALGO_RSA.label: {
+      case SIGNING_ALGO_RSA.name: {
         this._key = rsa.generateKeyPair({ bits: 2048, e: 0x10001 }).privateKey;
         break;
       }
-      case SIGNING_ALGO_ED25519.label: {
-        // this._key = ed25519.generateKeyPair().privateKey;
-        this._key = Buffer.from(
-          'Xbasq0x/pvKMSjFJO9Ez0PDzBnfrJ0mlwS9taru10jdcX6TuycANPIsqN/2Y3Xyjp69EezwNx6k+dJq8HPGwzw==',
-          'base64'
-        );
+      case SIGNING_ALGO_ED25519.name: {
+        this._key = new ED25519PrivateKey();
         break;
       }
       default:
@@ -66,8 +71,8 @@ export class SigningPrivateKey {
   };
 
   load = (pemPrivateKey, password = null) => {
+    const msg = pem.decode(pemPrivateKey)[0];
     if (password) {
-      const msg = pem.decode(pemPrivateKey)[0];
       const keyInfo = pki.decryptPrivateKeyInfo(
         asn1.fromDer(msg.body),
         password
@@ -77,8 +82,6 @@ export class SigningPrivateKey {
       this._algo = algo;
       return;
     }
-
-    const msg = pem.decode(pemPrivateKey)[0];
 
     if (msg.procType && msg.procType.type === 'ENCRYPTED') {
       throw new Error(
@@ -94,14 +97,14 @@ export class SigningPrivateKey {
 
   publicKey = () => {
     switch (this._algo) {
-      case SIGNING_ALGO_RSA.label:
+      case SIGNING_ALGO_RSA.name:
         return new SigningPublicKey({
           publicKey: pki.setRsaPublicKey(this._key.n, this._key.e),
           algo: this._algo
         });
-      case SIGNING_ALGO_ED25519.label:
+      case SIGNING_ALGO_ED25519.name:
         return new SigningPublicKey({
-          publicKey: ed25519.publicKeyFromPrivateKey({ privateKey: this._key }),
+          publicKey: this._key.publicKey(),
           algo: this._algo
         });
       default:
@@ -110,41 +113,40 @@ export class SigningPrivateKey {
   };
 
   sign = message => {
+    let sig;
     switch (this._algo) {
-      case SIGNING_ALGO_RSA.label: {
-        const hash = md.sha1.create();
+      case SIGNING_ALGO_RSA.name: {
+        const hash = md.sha256.create();
         hash.update(message, 'utf-8');
-
-        const signature = this._key.sign(hash);
-        return util.encode64(signature);
+        sig = this._key.sign(hash);
+        break;
       }
-      case SIGNING_ALGO_ED25519.label: {
-        const signature = ed25519.sign({
-          privateKey: this._key,
-          encoding: 'binary',
-          message
-        });
-        return signature.toString('base64');
+      case SIGNING_ALGO_ED25519.name: {
+        sig = this._key.sign(message);
+        break;
       }
       default:
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
     }
+
+    return pem.encode({
+      type: SIGNATURE_PEM_LABEL,
+      body: sig
+    });
   };
 
   export = (password = null) => {
     let privateKeyInfo;
     switch (this._algo) {
-      case SIGNING_ALGO_RSA.label: {
+      case SIGNING_ALGO_RSA.name: {
         const privateKey = pki.privateKeyToAsn1(this._key);
         privateKeyInfo = pki.wrapRsaPrivateKey(privateKey);
         break;
       }
-      case SIGNING_ALGO_ED25519.label: {
-        const privateKey = ed25519PrivateKeyToAsn1(this._key);
-        privateKeyInfo = wrapEd25519PrivateKey(privateKey);
+      case SIGNING_ALGO_ED25519.name: {
+        privateKeyInfo = this._key.toPkcs8();
         break;
       }
-
       default:
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
     }
@@ -161,165 +163,17 @@ export class SigningPrivateKey {
     }
 
     const msg = {
-      type: `${this._algo} PRIVATE KEY`,
+      type: privateKeyPEMLabel(this._algo),
       body: asn1.toDer(privateKeyInfo).getBytes()
     };
     return pem.encode(msg);
   };
 }
 
-export class SigningPublicKey {
-  constructor({ publicKey, pemPublicKey, algo }) {
-    if (publicKey) {
-      if (!algo)
-        throw new Error(
-          'You must specify the algo when creating from the raw key.'
-        );
-      this._key = publicKey;
-      this._algo = algo;
-    } else {
-      this.load(pemPublicKey);
-    }
-  }
-
-  load = pemPublicKey => {
-    const derPublicKey = pem.decode(pemPublicKey);
-    const asn1PublicKey = asn1.fromDer(derPublicKey[0].body);
-
-    const { key, algo } = decodePublicKeyAsn1(asn1PublicKey);
-
-    this._algo = algo;
-    this._key = key;
-  };
-
-  verify = (message, signature) => {
-    switch (this._algo) {
-      case SIGNING_ALGO_RSA.label: {
-        const hash = md.sha1.create();
-        hash.update(message, 'utf-8');
-
-        return this._key.verify(
-          hash.digest().bytes(),
-          util.decode64(signature)
-        );
-      }
-      case SIGNING_ALGO_ED25519.label: {
-        return ed25519.verify({
-          publicKey: this._key,
-          message,
-          encoding: 'binary',
-          signature: Buffer.from(signature, 'base64')
-        });
-      }
-
-      default:
-        throw new Error(`Unsupported signing algorithm "${this._algo}"`);
-    }
-  };
-
-  export = () => {
-    let asn1PublicKey;
-    switch (this._algo) {
-      case SIGNING_ALGO_RSA.label:
-        asn1PublicKey = pki.publicKeyToAsn1(this._key);
-        break;
-      case SIGNING_ALGO_ED25519.label:
-        asn1PublicKey = ed25519PublicKeyToAsn1(this._key);
-        break;
-
-      default:
-        break;
-    }
-    const derPublicKey = asn1.toDer(asn1PublicKey);
-
-    return pem.encode({
-      type: `${this._algo} PUBLIC KEY`,
-      body: derPublicKey.data
-    });
-  };
-}
-
-// ============================================================================
-// ====                              ED25519                               ====
-// ============================================================================
-
-//
-// export
-//
-
-// PRIVATE KEY
-export const ed25519PrivateKeyToAsn1 = key =>
-  asn1.create(asn1.UNIVERSAL, asn1.Type.OCTETSTRING, false, key);
-
-export const wrapEd25519PrivateKey = key =>
-  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-    // version (0)
-    asn1.create(
-      asn1.Class.UNIVERSAL,
-      asn1.Type.INTEGER,
-      false,
-      asn1.integerToDer(0).getBytes()
-    ),
-    // privateKeyAlgorithm
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-      asn1.create(
-        asn1.Class.UNIVERSAL,
-        asn1.Type.OID,
-        false,
-        asn1.oidToDer(ED25519_OID).getBytes()
-      ),
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
-    ]),
-    // PrivateKey
-    asn1.create(
-      asn1.Class.UNIVERSAL,
-      asn1.Type.OCTETSTRING,
-      false,
-      asn1.toDer(key).getBytes()
-    )
-  ]);
-
-// PUBLIC KEY
-const ed25519PublicKeyToAsn1 = key =>
-  // SubjectPublicKeyInfo
-  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-    // AlgorithmIdentifier
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-      // algorithm
-      asn1.create(
-        asn1.Class.UNIVERSAL,
-        asn1.Type.OID,
-        false,
-        asn1.oidToDer(ED25519_OID).getBytes()
-      ),
-      // parameters (null)
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
-    ]),
-    // subjectPublicKey
-    asn1.create(
-      asn1.Class.UNIVERSAL,
-      asn1.Type.BITSTRING,
-      false,
-      // We need to pad the key with the byte 0 (zero).
-      util.createBuffer(Buffer.concat([Buffer.from([0]), key])).getBytes()
-    )
-  ]);
-
-//
-// import
-//
-
-// PRIVATE KEY
-
-export const decryptEd25519PrivateKey = (key, password) => {
-  // TODO: Validation
-
-  const msg = pem.decode(key)[0];
-  const keyInfo = pki.decryptPrivateKeyInfo(asn1.fromDer(msg.body), password);
-  return ed25519PrivateKeyFromAsn1(keyInfo);
-};
-
 // validator for a PrivateKeyInfo structure
+// Same as here: https://github.com/digitalbazaar/forge/blob/master/lib/rsa.js#L91
+// we copied this here because we need to do additionnal work on the switch in `decodePrivateKeyAsn1`
+// to include ED25519 logic
 const privateKeyValidator = {
   // PrivateKeyInfo
   name: 'PrivateKeyInfo',
@@ -362,15 +216,6 @@ const privateKeyValidator = {
   ]
 };
 
-// validator for an ED25519 private key
-const ed25519PrivateKeyValidator = {
-  name: 'ED25519PrivateKey',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.OCTETSTRING,
-  constructed: false,
-  capture: 'privateKey'
-};
-
 // decodePrivateKeyAsn1 returns an object containing the private key and the algo label.
 export const decodePrivateKeyAsn1 = key => {
   let obj = key;
@@ -388,33 +233,90 @@ export const decodePrivateKeyAsn1 = key => {
     case SIGNING_ALGO_RSA.oid:
       return {
         privateKey: pki.privateKeyFromAsn1(obj),
-        algo: SIGNING_ALGO_RSA.label
+        algo: SIGNING_ALGO_RSA.name
       };
     case SIGNING_ALGO_ED25519.oid:
       return {
         privateKey: ed25519PrivateKeyFromAsn1(obj),
-        algo: SIGNING_ALGO_ED25519.label
+        algo: SIGNING_ALGO_ED25519.name
       };
     default:
       throw new Error(`Unsupported signing algorithm OID ${oid}"`);
   }
 };
 
-const ed25519PrivateKeyFromAsn1 = key => {
-  const capture = {};
-  const errors = [];
-  if (!asn1.validate(key, ed25519PrivateKeyValidator, capture, errors)) {
-    const error = new Error(
-      'Cannot readt private key. ASN.1 object does not contain an ED25519PrivateKey.'
-    );
-    error.errors = errors;
-    throw error;
+// ============================================================================
+// ====                           PUBLIC KEY                               ====
+// ============================================================================
+
+export class SigningPublicKey {
+  constructor({ publicKey, pemPublicKey, algo }) {
+    if (publicKey) {
+      if (!algo)
+        throw new Error(
+          'You must specify the algo when creating from the raw key.'
+        );
+      this._key = publicKey;
+      this._algo = algo;
+    } else {
+      this.load(pemPublicKey);
+    }
   }
 
-  return unicodeToBuffer(capture.privateKey);
-};
+  load = pemPublicKey => {
+    const derPublicKey = pem.decode(pemPublicKey);
+    const asn1PublicKey = asn1.fromDer(derPublicKey[0].body);
 
-// PUBLIC KEY
+    const { key, algo } = decodePublicKeyAsn1(asn1PublicKey);
+
+    this._algo = algo;
+    this._key = key;
+  };
+
+  verify = (message, signature) => {
+    const { body } = pem.decode(signature)[0];
+    switch (this._algo) {
+      case SIGNING_ALGO_RSA.name: {
+        const hash = md.sha256.create();
+        hash.update(message, 'utf-8');
+
+        return this._key.verify(hash.digest().bytes(), body);
+      }
+      case SIGNING_ALGO_ED25519.name: {
+        return this._key.verify(message, body);
+      }
+
+      default:
+        throw new Error(`Unsupported signing algorithm "${this._algo}"`);
+    }
+  };
+
+  export = () => {
+    let asn1PublicKey;
+    switch (this._algo) {
+      case SIGNING_ALGO_RSA.name:
+        asn1PublicKey = pki.publicKeyToAsn1(this._key);
+        break;
+      case SIGNING_ALGO_ED25519.name:
+        asn1PublicKey = this._key.toAsn1();
+        break;
+
+      default:
+        break;
+    }
+    const derPublicKey = asn1.toDer(asn1PublicKey);
+
+    return pem.encode({
+      type: publicKeyPEMLabel(this._algo),
+      body: derPublicKey.data
+    });
+  };
+}
+
+// validator for a SubjectPublicKeyInfo structure
+// Same as here: https://github.com/digitalbazaar/forge/blob/master/lib/rsa.js#L226
+// we copied this here because we need to do additionnal work on the switch in `decodePublicKeyAsn1`
+// to include ED25519 logic
 
 const publicKeyValidator = {
   name: 'SubjectPublicKeyInfo',
@@ -481,12 +383,14 @@ export const decodePublicKeyAsn1 = key => {
     case SIGNING_ALGO_RSA.oid:
       return {
         key: pki.publicKeyFromAsn1(capture.rsaPublicKey),
-        algo: SIGNING_ALGO_RSA.label
+        algo: SIGNING_ALGO_RSA.name
       };
     case SIGNING_ALGO_ED25519.oid:
       return {
-        key: unicodeToBuffer(capture.subjectPublicKeyED25519),
-        algo: SIGNING_ALGO_ED25519.label
+        key: new ED25519PublicKey(
+          unicodeToBuffer(capture.subjectPublicKeyED25519)
+        ),
+        algo: SIGNING_ALGO_ED25519.name
       };
 
     default:
@@ -494,5 +398,12 @@ export const decodePublicKeyAsn1 = key => {
   }
 };
 
+// ============================================================================
+// ====                             HELPERS                                ====
+// ============================================================================
+
 const unicodeToBuffer = str =>
   Buffer.from(str.split('').map(s => s.charCodeAt(0)));
+
+const privateKeyPEMLabel = algoName => `${algoName} ${PRIVATE_KEY_PEM_LABEL}`;
+const publicKeyPEMLabel = algoName => `${algoName} ${PUBLIC_KEY_PEM_LABEL}`;
