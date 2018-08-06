@@ -1,10 +1,12 @@
-import { rsa, md, util, asn1, pem, pki, oids } from 'node-forge';
+import { util, asn1, pem, pki, oids } from 'node-forge';
 import {
   ED25519_OID,
   ED25519PrivateKey,
   ed25519PrivateKeyFromAsn1,
   ED25519PublicKey
 } from './ed25519';
+
+import { RSAPrivateKey, RSAPublicKey } from './rsa';
 
 const PRIVATE_KEY_PEM_LABEL = 'PRIVATE KEY';
 const PUBLIC_KEY_PEM_LABEL = 'PUBLIC KEY';
@@ -58,7 +60,7 @@ export class SigningPrivateKey {
 
     switch (algo) {
       case SIGNING_ALGO_RSA.name: {
-        this._key = rsa.generateKeyPair({ bits: 2048, e: 0x10001 }).privateKey;
+        this._key = new RSAPrivateKey();
         break;
       }
       case SIGNING_ALGO_ED25519.name: {
@@ -98,10 +100,6 @@ export class SigningPrivateKey {
   publicKey = () => {
     switch (this._algo) {
       case SIGNING_ALGO_RSA.name:
-        return new SigningPublicKey({
-          publicKey: pki.setRsaPublicKey(this._key.n, this._key.e),
-          algo: this._algo
-        });
       case SIGNING_ALGO_ED25519.name:
         return new SigningPublicKey({
           publicKey: this._key.publicKey(),
@@ -115,16 +113,10 @@ export class SigningPrivateKey {
   sign = message => {
     let sig;
     switch (this._algo) {
-      case SIGNING_ALGO_RSA.name: {
-        const hash = md.sha256.create();
-        hash.update(message, 'utf-8');
-        sig = this._key.sign(hash);
-        break;
-      }
-      case SIGNING_ALGO_ED25519.name: {
+      case SIGNING_ALGO_RSA.name:
+      case SIGNING_ALGO_ED25519.name:
         sig = this._key.sign(message);
         break;
-      }
       default:
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
     }
@@ -138,15 +130,10 @@ export class SigningPrivateKey {
   export = (password = null) => {
     let privateKeyInfo;
     switch (this._algo) {
-      case SIGNING_ALGO_RSA.name: {
-        const privateKey = pki.privateKeyToAsn1(this._key);
-        privateKeyInfo = pki.wrapRsaPrivateKey(privateKey);
-        break;
-      }
-      case SIGNING_ALGO_ED25519.name: {
+      case SIGNING_ALGO_RSA.name:
+      case SIGNING_ALGO_ED25519.name:
         privateKeyInfo = this._key.toPkcs8();
         break;
-      }
       default:
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
     }
@@ -232,7 +219,7 @@ export const decodePrivateKeyAsn1 = key => {
   switch (oid) {
     case SIGNING_ALGO_RSA.oid:
       return {
-        privateKey: pki.privateKeyFromAsn1(obj),
+        privateKey: new RSAPrivateKey(pki.privateKeyFromAsn1(obj)),
         algo: SIGNING_ALGO_RSA.name
       };
     case SIGNING_ALGO_ED25519.oid:
@@ -276,15 +263,9 @@ export class SigningPublicKey {
   verify = (message, signature) => {
     const { body } = pem.decode(signature)[0];
     switch (this._algo) {
-      case SIGNING_ALGO_RSA.name: {
-        const hash = md.sha256.create();
-        hash.update(message, 'utf-8');
-
-        return this._key.verify(hash.digest().bytes(), body);
-      }
-      case SIGNING_ALGO_ED25519.name: {
+      case SIGNING_ALGO_RSA.name:
+      case SIGNING_ALGO_ED25519.name:
         return this._key.verify(message, body);
-      }
 
       default:
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
@@ -295,8 +276,6 @@ export class SigningPublicKey {
     let asn1PublicKey;
     switch (this._algo) {
       case SIGNING_ALGO_RSA.name:
-        asn1PublicKey = pki.publicKeyToAsn1(this._key);
-        break;
       case SIGNING_ALGO_ED25519.name:
         asn1PublicKey = this._key.toAsn1();
         break;
@@ -382,7 +361,7 @@ export const decodePublicKeyAsn1 = key => {
   switch (oid) {
     case SIGNING_ALGO_RSA.oid:
       return {
-        key: pki.publicKeyFromAsn1(capture.rsaPublicKey),
+        key: new RSAPublicKey(pki.publicKeyFromAsn1(capture.rsaPublicKey)),
         algo: SIGNING_ALGO_RSA.name
       };
     case SIGNING_ALGO_ED25519.oid:
