@@ -1,5 +1,5 @@
-import * as rsa from './rsa';
 import * as aes from './aes';
-import * as asym from './asym';
+import * as sig from './sig';
+import * as pke from './pke';
 
-export { rsa, aes, asym };
+export { aes, sig, pke };
