@@ -1,4 +1,4 @@
-import { util, asn1, pem, pki } from 'node-forge';
+import { pki } from 'node-forge';
 
 import {
   ED25519PrivateKey,
@@ -8,12 +8,16 @@ import { RSAPrivateKey } from '../keys/rsa';
 
 import SigningPublicKey from './publicKey';
 import {
-  PRIVATE_KEY_PEM_LABEL,
-  SIGNATURE_PEM_LABEL,
   SIGNING_ALGOS,
   SIGNING_ALGO_RSA,
   SIGNING_ALGO_ED25519
 } from './constants';
+
+import {
+  encodePrivateKeyInfo,
+  encodeSignature,
+  decodePrivateKey
+} from '../utils';
 
 export default class SigningPrivateKey {
   constructor({ algo, pemPrivateKey, password }) {
@@ -45,28 +49,19 @@ export default class SigningPrivateKey {
   };
 
   load = (pemPrivateKey, password = null) => {
-    const msg = pem.decode(pemPrivateKey)[0];
-    if (password) {
-      const keyInfo = pki.decryptPrivateKeyInfo(
-        asn1.fromDer(msg.body),
-        password
-      );
-      const { privateKey, algo } = decodePrivateKeyAsn1(keyInfo);
-      this._key = privateKey;
-      this._algo = algo;
-      return;
+    const { key, oid } = decodePrivateKey(pemPrivateKey, password);
+    switch (oid) {
+      case SIGNING_ALGO_RSA.oid:
+        this._key = new RSAPrivateKey(pki.privateKeyFromAsn1(key));
+        this._algo = SIGNING_ALGO_RSA.name;
+        break;
+      case SIGNING_ALGO_ED25519.oid:
+        this._key = ed25519PrivateKeyFromAsn1(key);
+        this._algo = SIGNING_ALGO_ED25519.name;
+        break;
+      default:
+        throw new Error(`Unsupported signing algorithm OID ${oid}"`);
     }
-
-    if (msg.procType && msg.procType.type === 'ENCRYPTED') {
-      throw new Error(
-        'Could not convert private key from PEM; PEM is encrypted.'
-      );
-    }
-
-    const keyInfo = asn1.fromDer(msg.body);
-    const { privateKey, algo } = decodePrivateKeyAsn1(keyInfo);
-    this._key = privateKey;
-    this._algo = algo;
   };
 
   publicKey = () => {
@@ -93,10 +88,7 @@ export default class SigningPrivateKey {
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
     }
 
-    return pem.encode({
-      type: SIGNATURE_PEM_LABEL,
-      body: sig
-    });
+    return encodeSignature(sig);
   };
 
   export = (password = null) => {
@@ -110,98 +102,15 @@ export default class SigningPrivateKey {
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
     }
 
-    if (password) {
-      const encryptedPrivateKeyInfo = pki.encryptPrivateKeyInfo(
-        privateKeyInfo,
-        password,
-        { algorithm: 'aes256' }
-      );
+    if (!password) return encodePrivateKeyInfo(privateKeyInfo, this._algo);
 
-      // Export keys to pem format
-      return pki.encryptedPrivateKeyToPem(encryptedPrivateKeyInfo);
-    }
+    const encryptedPrivateKeyInfo = pki.encryptPrivateKeyInfo(
+      privateKeyInfo,
+      password,
+      { algorithm: 'aes256' }
+    );
 
-    const msg = {
-      type: privateKeyPEMLabel(this._algo),
-      body: asn1.toDer(privateKeyInfo).getBytes()
-    };
-    return pem.encode(msg);
+    // Export keys to pem format
+    return pki.encryptedPrivateKeyToPem(encryptedPrivateKeyInfo);
   };
 }
-
-// validator for a PrivateKeyInfo structure
-// Same as here: https://github.com/digitalbazaar/forge/blob/master/lib/rsa.js#L91
-// we copied this here because we need to do additionnal work on the switch in `decodePrivateKeyAsn1`
-// to include ED25519 logic
-const privateKeyValidator = {
-  // PrivateKeyInfo
-  name: 'PrivateKeyInfo',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
-  constructed: true,
-  value: [
-    {
-      // Version (INTEGER)
-      name: 'PrivateKeyInfo.version',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.INTEGER,
-      constructed: false,
-      capture: 'privateKeyVersion'
-    },
-    {
-      // privateKeyAlgorithm
-      name: 'PrivateKeyInfo.privateKeyAlgorithm',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.SEQUENCE,
-      constructed: true,
-      value: [
-        {
-          name: 'AlgorithmIdentifier.algorithm',
-          tagClass: asn1.Class.UNIVERSAL,
-          type: asn1.Type.OID,
-          constructed: false,
-          capture: 'privateKeyOid'
-        }
-      ]
-    },
-    {
-      // PrivateKey
-      name: 'PrivateKeyInfo',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OCTETSTRING,
-      constructed: false,
-      capture: 'privateKey'
-    }
-  ]
-};
-
-// decodePrivateKeyAsn1 returns an object containing the private key and the algo label.
-const decodePrivateKeyAsn1 = key => {
-  let obj = key;
-
-  // Get private key info
-  const capture = {};
-  const errors = [];
-  if (asn1.validate(obj, privateKeyValidator, capture, errors)) {
-    obj = asn1.fromDer(util.createBuffer(capture.privateKey));
-  }
-
-  // Decode private key
-  const oid = asn1.derToOid(capture.privateKeyOid);
-  switch (oid) {
-    case SIGNING_ALGO_RSA.oid:
-      return {
-        privateKey: new RSAPrivateKey(pki.privateKeyFromAsn1(obj)),
-        algo: SIGNING_ALGO_RSA.name
-      };
-    case SIGNING_ALGO_ED25519.oid:
-      return {
-        privateKey: ed25519PrivateKeyFromAsn1(obj),
-        algo: SIGNING_ALGO_ED25519.name
-      };
-    default:
-      throw new Error(`Unsupported signing algorithm OID ${oid}"`);
-  }
-};
-
-const privateKeyPEMLabel = algoName => `${algoName} ${PRIVATE_KEY_PEM_LABEL}`;
