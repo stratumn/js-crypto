@@ -1,13 +1,15 @@
-import { asn1, pem, pki } from 'node-forge';
+import { asn1, pki } from 'node-forge';
 import { ED25519PublicKey } from '../keys/curve25519';
+import { RSAPublicKey } from '../keys/rsa';
 
-import RSAPublicKey from '../keys/rsa';
+import { SIGNING_ALGO_RSA, SIGNING_ALGO_ED25519 } from './constants';
 
 import {
-  PUBLIC_KEY_PEM_LABEL,
-  SIGNING_ALGO_RSA,
-  SIGNING_ALGO_ED25519
-} from './constants';
+  encodePublicKey,
+  decodePublicKey,
+  decodeSignature,
+  unicodeToBuffer
+} from '../utils';
 
 export default class SigningPublicKey {
   constructor({ publicKey, pemPublicKey, algo }) {
@@ -24,8 +26,7 @@ export default class SigningPublicKey {
   }
 
   load = pemPublicKey => {
-    const derPublicKey = pem.decode(pemPublicKey);
-    const asn1PublicKey = asn1.fromDer(derPublicKey[0].body);
+    const asn1PublicKey = decodePublicKey(pemPublicKey);
 
     const { key, algo } = decodePublicKeyAsn1(asn1PublicKey);
 
@@ -34,11 +35,11 @@ export default class SigningPublicKey {
   };
 
   verify = (message, signature) => {
-    const { body } = pem.decode(signature)[0];
+    const sig = decodeSignature(signature);
     switch (this._algo) {
       case SIGNING_ALGO_RSA.name:
       case SIGNING_ALGO_ED25519.name:
-        return this._key.verify(message, body);
+        return this._key.verify(message, sig);
 
       default:
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
@@ -56,12 +57,8 @@ export default class SigningPublicKey {
       default:
         break;
     }
-    const derPublicKey = asn1.toDer(asn1PublicKey);
 
-    return pem.encode({
-      type: publicKeyPEMLabel(this._algo),
-      body: derPublicKey.data
-    });
+    return encodePublicKey(asn1PublicKey, this._algo);
   };
 }
 
@@ -149,8 +146,3 @@ const decodePublicKeyAsn1 = key => {
       throw new Error(`Unsupported signing algorithm OID ${oid}"`);
   }
 };
-
-const unicodeToBuffer = str =>
-  Buffer.from(str.split('').map(s => s.charCodeAt(0)));
-
-const publicKeyPEMLabel = algoName => `${algoName} ${PUBLIC_KEY_PEM_LABEL}`;

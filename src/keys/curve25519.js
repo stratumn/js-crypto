@@ -1,4 +1,5 @@
 import { asn1, ed25519, util } from 'node-forge';
+import { unicodeToBuffer } from '../utils';
 
 export const X25519_OID = '1.3.101.110';
 export const ED25519_OID = '1.3.101.112';
@@ -195,9 +196,6 @@ const curve25519PrivateKeyValidator = {
   constructed: false,
   capture: 'privateKey'
 };
-
-const unicodeToBuffer = str =>
-  Buffer.from(str.split('').map(s => s.charCodeAt(0)));
 
 const privateKeyToPkcs8 = (key, oid) => {
   const asn1Key = asn1.create(

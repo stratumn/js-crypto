@@ -1,4 +1,4 @@
-import { util, asn1, pem, pki } from 'node-forge';
+import { util, asn1, pki } from 'node-forge';
 
 import {
   ED25519PrivateKey,
@@ -8,12 +8,16 @@ import { RSAPrivateKey } from '../keys/rsa';
 
 import SigningPublicKey from './publicKey';
 import {
-  PRIVATE_KEY_PEM_LABEL,
-  SIGNATURE_PEM_LABEL,
   SIGNING_ALGOS,
   SIGNING_ALGO_RSA,
   SIGNING_ALGO_ED25519
 } from './constants';
+
+import {
+  encodePrivateKeyInfo,
+  encodeSignature,
+  decodePrivateKey
+} from '../utils';
 
 export default class SigningPrivateKey {
   constructor({ algo, pemPrivateKey, password }) {
@@ -45,25 +49,7 @@ export default class SigningPrivateKey {
   };
 
   load = (pemPrivateKey, password = null) => {
-    const msg = pem.decode(pemPrivateKey)[0];
-    if (password) {
-      const keyInfo = pki.decryptPrivateKeyInfo(
-        asn1.fromDer(msg.body),
-        password
-      );
-      const { privateKey, algo } = decodePrivateKeyAsn1(keyInfo);
-      this._key = privateKey;
-      this._algo = algo;
-      return;
-    }
-
-    if (msg.procType && msg.procType.type === 'ENCRYPTED') {
-      throw new Error(
-        'Could not convert private key from PEM; PEM is encrypted.'
-      );
-    }
-
-    const keyInfo = asn1.fromDer(msg.body);
+    const keyInfo = decodePrivateKey(pemPrivateKey, password);
     const { privateKey, algo } = decodePrivateKeyAsn1(keyInfo);
     this._key = privateKey;
     this._algo = algo;
@@ -93,10 +79,7 @@ export default class SigningPrivateKey {
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
     }
 
-    return pem.encode({
-      type: SIGNATURE_PEM_LABEL,
-      body: sig
-    });
+    return encodeSignature(sig);
   };
 
   export = (password = null) => {
@@ -110,22 +93,16 @@ export default class SigningPrivateKey {
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
     }
 
-    if (password) {
-      const encryptedPrivateKeyInfo = pki.encryptPrivateKeyInfo(
-        privateKeyInfo,
-        password,
-        { algorithm: 'aes256' }
-      );
+    if (!password) return encodePrivateKeyInfo(privateKeyInfo, this._algo);
 
-      // Export keys to pem format
-      return pki.encryptedPrivateKeyToPem(encryptedPrivateKeyInfo);
-    }
+    const encryptedPrivateKeyInfo = pki.encryptPrivateKeyInfo(
+      privateKeyInfo,
+      password,
+      { algorithm: 'aes256' }
+    );
 
-    const msg = {
-      type: privateKeyPEMLabel(this._algo),
-      body: asn1.toDer(privateKeyInfo).getBytes()
-    };
-    return pem.encode(msg);
+    // Export keys to pem format
+    return pki.encryptedPrivateKeyToPem(encryptedPrivateKeyInfo);
   };
 }
 
@@ -203,5 +180,3 @@ const decodePrivateKeyAsn1 = key => {
       throw new Error(`Unsupported signing algorithm OID ${oid}"`);
   }
 };
-
-const privateKeyPEMLabel = algoName => `${algoName} ${PRIVATE_KEY_PEM_LABEL}`;
