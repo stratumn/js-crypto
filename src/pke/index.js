@@ -1,5 +1,5 @@
-export class EncryptionKeyPair {}
+export { default as EncryptionKeyPair } from './keyPair';
+export { default as EncryptionPrivateKey } from './privateKey';
+export { default as EncryptionPublicKey } from './publicKey';
 
-export class EncryptionPrivateKey {}
-
-export class EncryptionPublicKey {}
+export * from './constants';
