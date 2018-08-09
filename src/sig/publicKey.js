@@ -8,7 +8,7 @@ import {
   encodePublicKey,
   decodePublicKey,
   decodeSignature,
-  unicodeToBuffer
+  unicodeToUint8Array
 } from '../utils';
 
 export default class SigningPublicKey {
@@ -37,7 +37,7 @@ export default class SigningPublicKey {
         break;
       case SIGNING_ALGO_ED25519.oid:
         this._key = new ED25519PublicKey(
-          unicodeToBuffer(asn1Data.curve25519PublicKey)
+          unicodeToUint8Array(asn1Data.curve25519PublicKey)
         );
         this._algo = SIGNING_ALGO_ED25519.name;
         break;
