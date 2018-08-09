@@ -24,9 +24,14 @@ export class RSAPrivateKey {
     return this._key.sign(hash);
   };
 
-  decrypt = (encryptedKey, ciphertext, iv, tag) => {
+  decrypt = (ciphertext, { encryptedAESKey, iv, tag }) => {
+    if (!encryptedAESKey || !iv || !tag)
+      throw new Error(
+        'decryption opts should contain encryptedAESKey, iv and tag'
+      );
+
     // Decrypt symmetric key with private key
-    const key = this._key.decrypt(util.decode64(encryptedKey), 'RSA-OAEP');
+    const key = this._key.decrypt(util.decode64(encryptedAESKey), 'RSA-OAEP');
     const symmetricKey = new SymmetricKey(key);
 
     // Decrypt message
@@ -61,9 +66,9 @@ export class RSAPublicKey {
 
     // Encrypt symmetric key with public key
     const { key } = symmetricKey.export();
-    const encryptedKey = util.encode64(this._key.encrypt(key, 'RSA-OAEP'));
+    const encryptedAESKey = util.encode64(this._key.encrypt(key, 'RSA-OAEP'));
 
-    return { encryptedKey, iv, ciphertext, tag };
+    return { encryptedAESKey, iv, ciphertext, tag };
   };
 
   toAsn1 = () => pki.publicKeyToAsn1(this._key);
