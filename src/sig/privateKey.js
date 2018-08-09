@@ -80,7 +80,12 @@ export default class SigningPrivateKey {
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
     }
 
-    return encodeSignature(sig);
+    return {
+      signature: encodeSignature(sig),
+      message,
+      algorithm: this._algo,
+      public_key: this.publicKey().export()
+    };
   };
 
   export = (password = null) => {

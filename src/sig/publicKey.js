@@ -47,7 +47,7 @@ export default class SigningPublicKey {
     }
   };
 
-  verify = (message, signature) => {
+  verify = ({ message, signature }) => {
     const sig = decodeSignature(signature);
     switch (this._algo) {
       case SIGNING_ALGO_RSA.name:

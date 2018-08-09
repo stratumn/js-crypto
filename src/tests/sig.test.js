@@ -67,7 +67,9 @@ describe('Signatures', () => {
         it('should sign message', () => {
           const key = new SigningPrivateKey({ pemPrivateKey: v.priv });
           const sig = key.sign(cases.message);
-          expectPEMStringsEqual(sig, v.sig);
+          expectPEMStringsEqual(sig.signature, v.sig);
+          expectPEMStringsEqual(sig.public_key, key.publicKey().export());
+          expectPEMStringsEqual(sig.message, cases.message);
         });
       });
 
@@ -79,7 +81,9 @@ describe('Signatures', () => {
 
         it('should verify signature', () => {
           const key = new SigningPublicKey({ pemPublicKey: v.pub });
-          expect(key.verify(cases.message, v.sig)).toBe(true);
+          expect(key.verify({ message: cases.message, signature: v.sig })).toBe(
+            true
+          );
         });
       });
     });
