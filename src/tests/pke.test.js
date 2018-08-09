@@ -71,7 +71,11 @@ describe('Encryption', () => {
         it('should decrypt message', () => {
           const key = new EncryptionPrivateKey({ pemPrivateKey: v.priv });
           const { ciphertext, iv, tag, encryptedKey } = v.encMessage;
-          const plaintext = key.decrypt(encryptedKey, ciphertext, iv, tag);
+          const plaintext = key.decrypt(ciphertext, {
+            encryptedAESKey: encryptedKey,
+            iv,
+            tag
+          });
           expect(plaintext).toBe(cases.message);
         });
       });
@@ -87,8 +91,8 @@ describe('Encryption', () => {
           const sk = new EncryptionPrivateKey({ pemPrivateKey: v.priv });
           const msg = 'plap';
 
-          const { ciphertext, iv, tag, encryptedKey } = pk.encrypt(msg);
-          const plaintext = sk.decrypt(encryptedKey, ciphertext, iv, tag);
+          const { ciphertext, ...opts } = pk.encrypt(msg);
+          const plaintext = sk.decrypt(ciphertext, opts);
           expect(plaintext).toBe(msg);
         });
       });
