@@ -7,11 +7,7 @@ import {
 import { RSAPrivateKey } from '../keys/rsa';
 
 import SigningPublicKey from './publicKey';
-import {
-  SIGNING_ALGOS,
-  SIGNING_ALGO_RSA,
-  SIGNING_ALGO_ED25519
-} from './constants';
+import { SIGNING_ALGO_RSA, SIGNING_ALGO_ED25519 } from './constants';
 
 import {
   encodePrivateKeyInfo,
@@ -29,11 +25,7 @@ export default class SigningPrivateKey {
   }
 
   generate = algo => {
-    if (SIGNING_ALGOS.indexOf(algo) === -1)
-      throw new Error(`Unsupported signing algorithm "${algo}"`);
-
     this._algo = algo;
-
     switch (algo) {
       case SIGNING_ALGO_RSA.name: {
         this._key = new RSAPrivateKey();

@@ -68,7 +68,7 @@ export default class SigningPublicKey {
         break;
 
       default:
-        break;
+        throw new Error(`Unsupported encryption algorithm ${this._algo}"`);
     }
 
     return encodePublicKey(asn1PublicKey, this._algo);

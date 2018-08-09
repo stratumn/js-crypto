@@ -24,13 +24,18 @@ export class RSAPrivateKey {
     return this._key.sign(hash);
   };
 
-  decrypt = (encryptedKey, iv, cipherText) => {
+  decrypt = (ciphertext, { encryptedAESKey, iv, tag }) => {
+    if (!encryptedAESKey || !iv || !tag)
+      throw new Error(
+        'decryption opts should contain encryptedAESKey, iv and tag'
+      );
+
     // Decrypt symmetric key with private key
-    const key = this._key.decrypt(util.decode64(encryptedKey), 'RSA-OAEP');
-    const symmetricKey = new SymmetricKey(key, iv);
+    const key = this._key.decrypt(util.decode64(encryptedAESKey), 'RSA-OAEP');
+    const symmetricKey = new SymmetricKey(key);
 
     // Decrypt message
-    return symmetricKey.decrypt(cipherText);
+    return symmetricKey.decrypt(ciphertext, iv, tag);
   };
 
   toPkcs8 = () => {
@@ -57,13 +62,13 @@ export class RSAPublicKey {
   encrypt = message => {
     // Generate a symmetric key to encrypt the message
     const symmetricKey = new SymmetricKey();
-    const cipherText = symmetricKey.encrypt(message);
+    const { ciphertext, iv, tag } = symmetricKey.encrypt(message);
 
     // Encrypt symmetric key with public key
-    const { key, iv } = symmetricKey.export();
-    const encryptedKey = util.encode64(this._key.encrypt(key, 'RSA-OAEP'));
+    const { key } = symmetricKey.export();
+    const encryptedAESKey = util.encode64(this._key.encrypt(key, 'RSA-OAEP'));
 
-    return { encryptedKey, iv, cipherText };
+    return { encryptedAESKey, iv, ciphertext, tag };
   };
 
   toAsn1 = () => pki.publicKeyToAsn1(this._key);
