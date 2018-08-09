@@ -1,6 +1,6 @@
 import { pki } from 'node-forge';
 import { RSAPublicKey } from '../keys/rsa';
-import { PKE_ALGO_RSA, PKE_ALGO_X25519 } from './constants';
+import { PKE_ALGO_RSA } from './constants';
 import { encodePublicKey, decodePublicKey } from '../utils';
 
 export default class EncryptionPublicKey {
@@ -29,7 +29,7 @@ export default class EncryptionPublicKey {
         break;
 
       default:
-        throw new Error(`Unsupported signing algorithm OID ${oid}"`);
+        throw new Error(`Unsupported encryption algorithm OID ${oid}"`);
     }
   };
 
@@ -39,12 +39,11 @@ export default class EncryptionPublicKey {
     let asn1PublicKey;
     switch (this._algo) {
       case PKE_ALGO_RSA.name:
-      case PKE_ALGO_X25519.name:
         asn1PublicKey = this._key.toAsn1();
         break;
 
       default:
-        break;
+        throw new Error(`Unsupported encryption algorithm ${this._algo}"`);
     }
 
     return encodePublicKey(asn1PublicKey, this._algo);

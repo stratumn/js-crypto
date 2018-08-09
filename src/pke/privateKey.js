@@ -21,7 +21,7 @@ export default class EncryptionPrivateKey {
         break;
       }
       default:
-        throw new Error(`Unsupported signing algorithm "${algo}"`);
+        throw new Error(`Unsupported encryption algorithm "${algo}"`);
     }
   };
 
@@ -33,7 +33,7 @@ export default class EncryptionPrivateKey {
         this._algo = PKE_ALGO_RSA.name;
         break;
       default:
-        throw new Error(`Unsupported signing algorithm OID ${oid}"`);
+        throw new Error(`Unsupported encryption algorithm OID ${oid}"`);
     }
   };
 
@@ -45,7 +45,7 @@ export default class EncryptionPrivateKey {
           algo: this._algo
         });
       default:
-        throw new Error(`Unsupported signing algorithm "${this._algo}"`);
+        throw new Error(`Unsupported encryption algorithm "${this._algo}"`);
     }
   };
 
@@ -59,7 +59,7 @@ export default class EncryptionPrivateKey {
         privateKeyInfo = this._key.toPkcs8();
         break;
       default:
-        throw new Error(`Unsupported signing algorithm "${this._algo}"`);
+        throw new Error(`Unsupported encryption algorithm "${this._algo}"`);
     }
 
     if (!password) return encodePrivateKeyInfo(privateKeyInfo, this._algo);

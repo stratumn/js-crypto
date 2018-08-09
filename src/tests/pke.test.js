@@ -6,7 +6,7 @@ import {
 
 import cases from './cases.json';
 
-describe('Signatures', () => {
+describe('Encryption', () => {
   Object.entries(cases.pke).forEach(([k, v]) => {
     describe(k, () => {
       describe('Key Pair', () => {
