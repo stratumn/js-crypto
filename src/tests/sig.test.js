@@ -1,3 +1,4 @@
+import { util } from 'node-forge';
 import { SigningKeyPair, SigningPrivateKey, SigningPublicKey } from '../sig';
 
 import cases from './cases.json';
@@ -67,7 +68,12 @@ describe('Signatures', () => {
         it('should sign message', () => {
           const key = new SigningPrivateKey({ pemPrivateKey: v.priv });
           const sig = key.sign(cases.message);
-          expectPEMStringsEqual(sig, v.sig);
+          expectPEMStringsEqual(util.decode64(sig.signature), v.sig);
+          expectPEMStringsEqual(
+            util.decode64(sig.public_key),
+            key.publicKey().export()
+          );
+          expectPEMStringsEqual(util.decode64(sig.message), cases.message);
         });
       });
 
@@ -79,7 +85,9 @@ describe('Signatures', () => {
 
         it('should verify signature', () => {
           const key = new SigningPublicKey({ pemPublicKey: v.pub });
-          expect(key.verify(cases.message, v.sig)).toBe(true);
+          expect(key.verify({ message: cases.message, signature: v.sig })).toBe(
+            true
+          );
         });
       });
     });

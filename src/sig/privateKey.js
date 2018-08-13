@@ -1,4 +1,4 @@
-import { pki } from 'node-forge';
+import { pki, util } from 'node-forge';
 
 import {
   ED25519PrivateKey,
@@ -80,7 +80,12 @@ export default class SigningPrivateKey {
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
     }
 
-    return encodeSignature(sig);
+    return {
+      signature: util.encode64(encodeSignature(sig)),
+      message: util.encode64(message),
+      algorithm: this._algo,
+      public_key: util.encode64(this.publicKey().export())
+    };
   };
 
   export = (password = null) => {
