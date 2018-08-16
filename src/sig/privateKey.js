@@ -83,7 +83,6 @@ export default class SigningPrivateKey {
     return {
       signature: util.encode64(encodeSignature(sig)),
       message: util.encode64(message),
-      algorithm: this._algo,
       public_key: util.encode64(this.publicKey().export())
     };
   };
