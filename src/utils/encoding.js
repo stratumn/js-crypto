@@ -11,7 +11,6 @@ const SIGNATURE_PEM_LABEL = 'MESSAGE';
 const privateKeyPEMLabel = algoName => `${algoName} ${PRIVATE_KEY_PEM_LABEL}`;
 const publicKeyPEMLabel = algoName => `${algoName} ${PUBLIC_KEY_PEM_LABEL}`;
 
-//
 const pemEncode = (type, body) =>
   pem.encode({ type, body }).replace(/\r/gm, '');
 
