@@ -17,6 +17,12 @@ The currently supported algos are:
 - RSA
 - ED25519
 
+Signatures are object containing:
+
+- signature: the base64 encoding of the PEM encoded signature
+- public_key: the base64 encoding of the PEM encoded public key
+- message: the base64 encoded message
+
 ### Private key
 
 Private keys are PKCE#8 embedded and PEM encoded. They can be encrypted using PKCS#5.

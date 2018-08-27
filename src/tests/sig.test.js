@@ -82,16 +82,25 @@ describe('Signatures', () => {
 
         it('should verify signature', () => {
           const key = new SigningPublicKey({ pemPublicKey: v.pub });
-          expect(key.verify({ message: cases.message, signature: v.sig })).toBe(
-            true
-          );
+          expect(
+            key.verify({
+              message: util.encode64(cases.message),
+              signature: util.encode64(v.sig)
+            })
+          ).toBe(true);
         });
 
         it('should not verify bad signature', () => {
           const key = new SigningPublicKey({ pemPublicKey: v.pub });
           expect(
-            key.verify({ message: 'some bad message', signature: v.sig })
+            key.verify({ message: 'b00b5', signature: util.encode64(v.sig) })
           ).toBe(false);
+        });
+
+        it('should verify the output of sign', () => {
+          const key = new SigningPrivateKey({ pemPrivateKey: v.priv });
+          const sig = key.sign('some message');
+          expect(key.publicKey().verify(sig)).toBe(true);
         });
       });
     });
