@@ -33,6 +33,7 @@ export default class EncryptionPublicKey {
     }
   };
 
+  // encrypt returns an object that can be destructured like { ciphertext, opts... }
   encrypt = message => this._key.encrypt(message);
 
   export = () => {

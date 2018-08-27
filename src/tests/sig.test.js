@@ -15,8 +15,8 @@ describe('Signatures', () => {
 
         it('should load private key', () => {
           const kp = new SigningKeyPair({ pemPrivateKey: v.priv });
-          expectPEMStringsEqual(kp.private.export(), v.priv);
-          expectPEMStringsEqual(kp.public.export(), v.pub);
+          expect(kp.private.export()).toBe(v.priv);
+          expect(kp.public.export()).toBe(v.pub);
         });
 
         it('should load encrypted key', () => {
@@ -24,8 +24,8 @@ describe('Signatures', () => {
             pemPrivateKey: v.encPriv,
             password: cases.password
           });
-          expectPEMStringsEqual(kp.private.export(), v.priv);
-          expectPEMStringsEqual(kp.public.export(), v.pub);
+          expect(kp.private.export()).toBe(v.priv);
+          expect(kp.public.export()).toBe(v.pub);
         });
 
         it('should export encrypted key', () => {
@@ -36,14 +36,14 @@ describe('Signatures', () => {
             pemPrivateKey: enc,
             password: cases.password
           });
-          expectPEMStringsEqual(kp.private.export(), kp2.private.export());
+          expect(kp.private.export()).toBe(kp2.private.export());
         });
       });
 
       describe('Private Key', () => {
         it('should load and export', () => {
           const key = new SigningPrivateKey({ pemPrivateKey: v.priv });
-          expectPEMStringsEqual(key.export(), v.priv);
+          expect(key.export()).toBe(v.priv);
         });
 
         it('should load encrypted key', () => {
@@ -51,7 +51,7 @@ describe('Signatures', () => {
             pemPrivateKey: v.encPriv,
             password: cases.password
           });
-          expectPEMStringsEqual(key.export(), v.priv);
+          expect(key.export()).toBe(v.priv);
         });
 
         it('should export encrypted key', () => {
@@ -62,25 +62,22 @@ describe('Signatures', () => {
             pemPrivateKey: enc,
             password: cases.password
           });
-          expectPEMStringsEqual(key.export(), key2.export());
+          expect(key.export()).toBe(key2.export());
         });
 
         it('should sign message', () => {
           const key = new SigningPrivateKey({ pemPrivateKey: v.priv });
           const sig = key.sign(cases.message);
-          expectPEMStringsEqual(util.decode64(sig.signature), v.sig);
-          expectPEMStringsEqual(
-            util.decode64(sig.public_key),
-            key.publicKey().export()
-          );
-          expectPEMStringsEqual(util.decode64(sig.message), cases.message);
+          expect(util.decode64(sig.signature)).toBe(v.sig);
+          expect(util.decode64(sig.public_key)).toBe(key.publicKey().export());
+          expect(util.decode64(sig.message)).toBe(cases.message);
         });
       });
 
       describe('Public Key', () => {
         it('should load and export', () => {
           const key = new SigningPublicKey({ pemPublicKey: v.pub });
-          expectPEMStringsEqual(key.export(), v.pub);
+          expect(key.export()).toBe(v.pub);
         });
 
         it('should verify signature', () => {
@@ -89,13 +86,14 @@ describe('Signatures', () => {
             true
           );
         });
+
+        it('should not verify bad signature', () => {
+          const key = new SigningPublicKey({ pemPublicKey: v.pub });
+          expect(
+            key.verify({ message: 'some bad message', signature: v.sig })
+          ).toBe(false);
+        });
       });
     });
   });
 });
-
-// Remove new lines fomr PEM strings before comparing them
-const expectPEMStringsEqual = (str1, str2) => {
-  const rmNewLines = str => str.replace(/\r\n|\n/gm, '');
-  expect(rmNewLines(str1)).toBe(rmNewLines(str2));
-};

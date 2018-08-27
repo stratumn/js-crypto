@@ -11,26 +11,23 @@ const SIGNATURE_PEM_LABEL = 'MESSAGE';
 const privateKeyPEMLabel = algoName => `${algoName} ${PRIVATE_KEY_PEM_LABEL}`;
 const publicKeyPEMLabel = algoName => `${algoName} ${PUBLIC_KEY_PEM_LABEL}`;
 
+//
+const pemEncode = (type, body) =>
+  pem.encode({ type, body }).replace(/\r/gm, '');
+
 // Encode an ASN1 encoded private to PEM
 export const encodePrivateKeyInfo = (asn1PrivateKeyInfo, algo) =>
-  pem.encode({
-    type: privateKeyPEMLabel(algo),
-    body: asn1.toDer(asn1PrivateKeyInfo).getBytes()
-  });
+  pemEncode(
+    privateKeyPEMLabel(algo),
+    asn1.toDer(asn1PrivateKeyInfo).getBytes()
+  );
 
 // encode an ASN1 encoded public key to PEM
 export const encodePublicKey = (asn1PublicKey, algo) =>
-  pem.encode({
-    type: publicKeyPEMLabel(algo),
-    body: asn1.toDer(asn1PublicKey).getBytes()
-  });
+  pemEncode(publicKeyPEMLabel(algo), asn1.toDer(asn1PublicKey).getBytes());
 
 // encode a signature to PEM
-export const encodeSignature = sig =>
-  pem.encode({
-    type: SIGNATURE_PEM_LABEL,
-    body: sig
-  });
+export const encodeSignature = sig => pemEncode(SIGNATURE_PEM_LABEL, sig);
 
 // ============================================================================
 // =====                             DECODING                             =====

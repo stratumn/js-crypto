@@ -18,8 +18,8 @@ describe('Encryption', () => {
 
         it('should load private key', () => {
           const kp = new EncryptionKeyPair({ pemPrivateKey: v.priv });
-          expectPEMStringsEqual(kp.private.export(), v.priv);
-          expectPEMStringsEqual(kp.public.export(), v.pub);
+          expect(kp.private.export()).toBe(v.priv);
+          expect(kp.public.export()).toBe(v.pub);
         });
 
         it('should load encrypted key', () => {
@@ -27,8 +27,8 @@ describe('Encryption', () => {
             pemPrivateKey: v.encPriv,
             password: cases.password
           });
-          expectPEMStringsEqual(kp.private.export(), v.priv);
-          expectPEMStringsEqual(kp.public.export(), v.pub);
+          expect(kp.private.export()).toBe(v.priv);
+          expect(kp.public.export()).toBe(v.pub);
         });
 
         it('should export encrypted key', () => {
@@ -39,14 +39,14 @@ describe('Encryption', () => {
             pemPrivateKey: enc,
             password: cases.password
           });
-          expectPEMStringsEqual(kp.private.export(), kp2.private.export());
+          expect(kp.private.export()).toBe(kp2.private.export());
         });
       });
 
       describe('Private Key', () => {
         it('should load and export', () => {
           const key = new EncryptionPrivateKey({ pemPrivateKey: v.priv });
-          expectPEMStringsEqual(key.export(), v.priv);
+          expect(key.export()).toBe(v.priv);
         });
 
         it('should load encrypted key', () => {
@@ -54,7 +54,7 @@ describe('Encryption', () => {
             pemPrivateKey: v.encPriv,
             password: cases.password
           });
-          expectPEMStringsEqual(key.export(), v.priv);
+          expect(key.export()).toBe(v.priv);
         });
 
         it('should export encrypted key', () => {
@@ -65,7 +65,7 @@ describe('Encryption', () => {
             pemPrivateKey: enc,
             password: cases.password
           });
-          expectPEMStringsEqual(key.export(), key2.export());
+          expect(key.export()).toBe(key2.export());
         });
 
         it('should decrypt message', () => {
@@ -83,7 +83,7 @@ describe('Encryption', () => {
       describe('Public Key', () => {
         it('should load and export', () => {
           const key = new EncryptionPublicKey({ pemPublicKey: v.pub });
-          expectPEMStringsEqual(key.export(), v.pub);
+          expect(key.export()).toBe(v.pub);
         });
 
         it('should encrypt message', () => {
@@ -99,9 +99,3 @@ describe('Encryption', () => {
     });
   });
 });
-
-// Remove new lines fomr PEM strings before comparing them
-const expectPEMStringsEqual = (str1, str2) => {
-  const rmNewLines = str => str.replace(/\r\n|\n/gm, '');
-  expect(rmNewLines(str1)).toBe(rmNewLines(str2));
-};
