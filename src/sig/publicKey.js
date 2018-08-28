@@ -1,4 +1,4 @@
-import { pki } from 'node-forge';
+import { pki, util } from 'node-forge';
 import { ED25519PublicKey } from '../keys/curve25519';
 import { RSAPublicKey } from '../keys/rsa';
 
@@ -48,11 +48,12 @@ export default class SigningPublicKey {
   };
 
   verify = ({ message, signature }) => {
-    const sig = decodeSignature(signature);
+    const msg = util.decode64(message);
+    const sig = decodeSignature(util.decode64(signature));
     switch (this._algo) {
       case SIGNING_ALGO_RSA.name:
       case SIGNING_ALGO_ED25519.name:
-        return this._key.verify(message, sig);
+        return this._key.verify(msg, sig);
 
       default:
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
