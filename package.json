@@ -1,6 +1,6 @@
 {
   "name": "@stratumn/js-crypto",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Browser compatible crypto",
   "main": "lib/index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "url": "git+https://github.com/stratumn/js-crypto.git"
   },
   "author": "Stratumn Team",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/stratumn/js-crypto/issues"
   },
