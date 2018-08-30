@@ -1,4 +1,5 @@
-import { pki, util } from 'node-forge';
+import { pki } from 'node-forge';
+import { stratumn } from '../proto/crypto_pb';
 
 import {
   ED25519PrivateKey,
@@ -13,7 +14,9 @@ import {
   encodePrivateKeyInfo,
   encodeSignature,
   decodePrivateKey
-} from '../utils';
+} from '../utils/encoding';
+
+import { stringToBytes } from '../utils';
 
 export default class SigningPrivateKey {
   constructor({ algo, pemPrivateKey, password }) {
@@ -70,6 +73,10 @@ export default class SigningPrivateKey {
   };
 
   sign = message => {
+    // message should be a UInt8Array
+    if (!(message instanceof Uint8Array))
+      throw new Error('unexpected type, use Uint8Array');
+
     let sig;
     switch (this._algo) {
       case SIGNING_ALGO_RSA.name:
@@ -80,11 +87,11 @@ export default class SigningPrivateKey {
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);
     }
 
-    return {
-      signature: util.encode64(encodeSignature(sig)),
-      message: util.encode64(message),
-      public_key: util.encode64(this.publicKey().export())
-    };
+    return stratumn.crypto.Signature.fromObject({
+      publicKey: stringToBytes(this.publicKey().export()),
+      signature: stringToBytes(encodeSignature(sig)),
+      message
+    });
   };
 
   export = (password = null) => {

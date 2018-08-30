@@ -1,5 +1,5 @@
 import { asn1, ed25519, util } from 'node-forge';
-import { unicodeToUint8Array, concatUint8Arrays } from '../utils';
+import { stringToBytes, concatUint8Arrays } from '../utils';
 
 export const X25519_OID = '1.3.101.110';
 export const ED25519_OID = '1.3.101.112';
@@ -46,7 +46,7 @@ export const ed25519PrivateKeyFromAsn1 = key => {
     throw error;
   }
 
-  const keyBytes = unicodeToUint8Array(capture.privateKey);
+  const keyBytes = stringToBytes(capture.privateKey);
   return new ED25519PrivateKey(keyBytes);
 };
 
@@ -64,7 +64,7 @@ export class ED25519PublicKey {
       publicKey: this._key,
       message,
       encoding: 'binary',
-      signature: unicodeToUint8Array(signature)
+      signature: stringToBytes(signature)
     });
 
   toAsn1 = () =>

@@ -65,7 +65,13 @@ const key = new sig.SigningPrivateKey({
 and then use that key to sign a message:
 
 ```javascript
-const signature = key.sign('some message');
+import { utils } from '@stratumn/js-crypto';
+
+const msgBytes = utils.stringToBytes('some message');
+const signature = key.sign(msgBytes);
+
+// signature is a protobuf object. You can serialize it by doing:
+const serializedSignature = signature.toJSON();
 ```
 
 The private key can be exported by doing
@@ -99,8 +105,19 @@ const key = new sig.SigningPublicKey({ pemPublicKey: pemKey });
 The public key is used to verify a signature:
 
 ```javascript
-const sig = '-----BEGIN MESSAGE-----...';
-const ok = key.verify({ message: 'some message', signature: sig });
+import { utils } from '@stratumn/js-crypto';
+
+// The sigObj is the output of the sign method
+const sigObj = {
+  signature: '-----BEGIN MESSAGE-----...',
+  message: 'some message'
+};
+
+// Transform the signature object into protobuf
+const pbSig = sigToPb(sigObj);
+
+// Verify the signature
+const ok = key.verify(pbSig);
 ```
 
 ---
