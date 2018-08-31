@@ -1,10 +1,6 @@
 import { util } from 'node-forge';
 import { SigningKeyPair, SigningPrivateKey, SigningPublicKey } from '../sig';
-import {
-  stringToBytes,
-  signatureFromJson,
-  signatureToJson
-} from '../utils';
+import { stringToBytes, signatureFromJson, signatureToJson } from '../utils';
 
 import cases from './cases.json';
 
