@@ -122,6 +122,7 @@ const sig = utils.signatureFromJson(serializedSignature);
 //  signature: Uint8Array{},
 //  message: Uint8Array{},
 //  public_key: Uint8Array{}
+// }
 
 // Verify the signature
 const ok = key.verify(sig);
