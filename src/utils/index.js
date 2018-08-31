@@ -36,16 +36,18 @@ export const concatUint8Arrays = (a1, a2) => {
  * deserialize base64 strings into Uint8Arrays
  */
 export const signatureFromJson = sig => ({
-  signature: b64.toByteArray(sig.signature),
-  message: b64.toByteArray(sig.message),
-  public_key: b64.toByteArray(sig.public_key)
+  signature: sig.signature ? b64.toByteArray(sig.signature) : new Uint8Array(),
+  message: sig.message ? b64.toByteArray(sig.message) : new Uint8Array(),
+  public_key: sig.public_key
+    ? b64.toByteArray(sig.public_key)
+    : new Uint8Array()
 });
 
 /**
  * seriailze all Uint8Arrays into base64 strings
  */
 export const signatureToJson = sig => ({
-  signature: b64.fromByteArray(sig.signature),
-  message: b64.fromByteArray(sig.message),
-  public_key: b64.fromByteArray(sig.public_key)
+  signature: sig.signature ? b64.fromByteArray(sig.signature) : '',
+  message: sig.message ? b64.fromByteArray(sig.message) : '',
+  public_key: sig.public_key ? b64.fromByteArray(sig.public_key) : ''
 });
