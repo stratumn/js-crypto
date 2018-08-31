@@ -2,8 +2,8 @@ import { util } from 'node-forge';
 import { SigningKeyPair, SigningPrivateKey, SigningPublicKey } from '../sig';
 import {
   stringToBytes,
-  deserializeSignature,
-  serializeSignature
+  signatureFromJson,
+  signatureToJson
 } from '../utils';
 
 import cases from './cases.json';
@@ -73,7 +73,7 @@ describe('Signatures', () => {
         it('should sign message', () => {
           const key = new SigningPrivateKey({ pemPrivateKey: v.priv });
           const sig = key.sign(stringToBytes(cases.message));
-          expect(serializeSignature(sig)).toEqual({
+          expect(signatureToJson(sig)).toEqual({
             signature: util.encode64(v.sig),
             message: util.encode64(cases.message),
             public_key: util.encode64(key.publicKey().export())
@@ -94,7 +94,7 @@ describe('Signatures', () => {
             message: util.encode64(cases.message),
             public_key: util.encode64(key.export())
           };
-          expect(key.verify(deserializeSignature(sig))).toBe(true);
+          expect(key.verify(signatureFromJson(sig))).toBe(true);
         });
 
         it('should not verify bad signature', () => {

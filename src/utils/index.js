@@ -35,7 +35,7 @@ export const concatUint8Arrays = (a1, a2) => {
 /**
  * deserialize base64 strings into Uint8Arrays
  */
-export const deserializeSignature = sig => ({
+export const signatureFromJson = sig => ({
   signature: b64.toByteArray(sig.signature),
   message: b64.toByteArray(sig.message),
   public_key: b64.toByteArray(sig.public_key)
@@ -44,7 +44,7 @@ export const deserializeSignature = sig => ({
 /**
  * seriailze all Uint8Arrays into base64 strings
  */
-export const serializeSignature = sig => ({
+export const signatureToJson = sig => ({
   signature: b64.fromByteArray(sig.signature),
   message: b64.fromByteArray(sig.message),
   public_key: b64.fromByteArray(sig.public_key)

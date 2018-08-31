@@ -73,7 +73,7 @@ const msgBytes = utils.stringToBytes('some message');
 const signature = key.sign(msgBytes);
 
 // signature is a protobuf object. You can serialize it by doing:
-const serializedSignature = utils.serializeSignature(signature);
+const serializedSignature = utils.signatureToJson(signature);
 ```
 
 The private key can be exported by doing
@@ -116,7 +116,7 @@ const serializedSignature = {
   public_key: 'ba5e64'
 };
 
-const sig = utils.deserializeSignature(serializedSignature);
+const sig = utils.signatureFromJson(serializedSignature);
 
 // sig = {
 //  signature: Uint8Array{},
