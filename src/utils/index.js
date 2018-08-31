@@ -1,4 +1,4 @@
-import * as b64 from 'base64-js';
+import { util } from 'node-forge';
 
 /**
  * convert a string into its byte array representation.
@@ -20,6 +20,26 @@ export const stringToBytes = str => {
 export const bytesToString = ba => String.fromCharCode.apply(null, ba);
 
 /**
+ * convert a Uint8Array its string base 64 representation
+ */
+export const bytesToB64String = arr => util.encode64(bytesToString(arr));
+
+/**
+ * convert a base64 encoded string to its Uint8Array representation
+ */
+export const b64StringToBytes = str => stringToBytes(util.decode64(str));
+
+/**
+ * encode a string in base64
+ */
+export const stringToB64String = util.encode64;
+
+/**
+ * decode a base 64 string
+ */
+export const b64StringToString = util.decode64;
+
+/**
  * concatenate two Uint8Arrays into a third one
  * @param {Uint8Array} a1
  * @param {Uint8Array} a2
@@ -36,18 +56,18 @@ export const concatUint8Arrays = (a1, a2) => {
  * deserialize base64 strings into Uint8Arrays
  */
 export const signatureFromJson = sig => ({
-  signature: sig.signature ? b64.toByteArray(sig.signature) : new Uint8Array(),
-  message: sig.message ? b64.toByteArray(sig.message) : new Uint8Array(),
+  signature: sig.signature ? b64StringToBytes(sig.signature) : new Uint8Array(),
+  message: sig.message ? b64StringToBytes(sig.message) : new Uint8Array(),
   public_key: sig.public_key
-    ? b64.toByteArray(sig.public_key)
+    ? b64StringToBytes(sig.public_key)
     : new Uint8Array()
 });
 
 /**
- * seriailze all Uint8Arrays into base64 strings
+ * serialize all Uint8Arrays into base64 strings
  */
 export const signatureToJson = sig => ({
-  signature: sig.signature ? b64.fromByteArray(sig.signature) : '',
-  message: sig.message ? b64.fromByteArray(sig.message) : '',
-  public_key: sig.public_key ? b64.fromByteArray(sig.public_key) : ''
+  signature: sig.signature ? bytesToB64String(sig.signature) : '',
+  message: sig.message ? bytesToB64String(sig.message) : '',
+  public_key: sig.public_key ? bytesToB64String(sig.public_key) : ''
 });
