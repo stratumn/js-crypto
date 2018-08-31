@@ -1,5 +1,10 @@
 import { util } from 'node-forge';
 import { SigningKeyPair, SigningPrivateKey, SigningPublicKey } from '../sig';
+import {
+  stringToBytes,
+  deserializeSignature,
+  serializeSignature
+} from '../utils';
 
 import cases from './cases.json';
 
@@ -67,10 +72,12 @@ describe('Signatures', () => {
 
         it('should sign message', () => {
           const key = new SigningPrivateKey({ pemPrivateKey: v.priv });
-          const sig = key.sign(cases.message);
-          expect(util.decode64(sig.signature)).toBe(v.sig);
-          expect(util.decode64(sig.public_key)).toBe(key.publicKey().export());
-          expect(util.decode64(sig.message)).toBe(cases.message);
+          const sig = key.sign(stringToBytes(cases.message));
+          expect(serializeSignature(sig)).toEqual({
+            signature: util.encode64(v.sig),
+            message: util.encode64(cases.message),
+            public_key: util.encode64(key.publicKey().export())
+          });
         });
       });
 
@@ -82,24 +89,27 @@ describe('Signatures', () => {
 
         it('should verify signature', () => {
           const key = new SigningPublicKey({ pemPublicKey: v.pub });
-          expect(
-            key.verify({
-              message: util.encode64(cases.message),
-              signature: util.encode64(v.sig)
-            })
-          ).toBe(true);
+          const sig = {
+            signature: util.encode64(v.sig),
+            message: util.encode64(cases.message),
+            public_key: util.encode64(key.export())
+          };
+          expect(key.verify(deserializeSignature(sig))).toBe(true);
         });
 
         it('should not verify bad signature', () => {
           const key = new SigningPublicKey({ pemPublicKey: v.pub });
           expect(
-            key.verify({ message: 'b00b5', signature: util.encode64(v.sig) })
+            key.verify({
+              message: stringToBytes('plap'),
+              signature: stringToBytes(v.sig)
+            })
           ).toBe(false);
         });
 
         it('should verify the output of sign', () => {
           const key = new SigningPrivateKey({ pemPrivateKey: v.priv });
-          const sig = key.sign('some message');
+          const sig = key.sign(stringToBytes('some message'));
           expect(key.publicKey().verify(sig)).toBe(true);
         });
       });

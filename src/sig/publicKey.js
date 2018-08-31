@@ -1,4 +1,4 @@
-import { pki, util } from 'node-forge';
+import { pki } from 'node-forge';
 import { ED25519PublicKey } from '../keys/curve25519';
 import { RSAPublicKey } from '../keys/rsa';
 
@@ -7,9 +7,10 @@ import { SIGNING_ALGO_RSA, SIGNING_ALGO_ED25519 } from './constants';
 import {
   encodePublicKey,
   decodePublicKey,
-  decodeSignature,
-  unicodeToUint8Array
-} from '../utils';
+  decodeSignature
+} from '../utils/encoding';
+
+import { stringToBytes, bytesToString } from '../utils';
 
 export default class SigningPublicKey {
   constructor({ publicKey, pemPublicKey, algo }) {
@@ -37,7 +38,7 @@ export default class SigningPublicKey {
         break;
       case SIGNING_ALGO_ED25519.oid:
         this._key = new ED25519PublicKey(
-          unicodeToUint8Array(asn1Data.curve25519PublicKey)
+          stringToBytes(asn1Data.curve25519PublicKey)
         );
         this._algo = SIGNING_ALGO_ED25519.name;
         break;
@@ -48,12 +49,21 @@ export default class SigningPublicKey {
   };
 
   verify = ({ message, signature }) => {
-    const msg = util.decode64(message);
-    const sig = decodeSignature(util.decode64(signature));
+    if (
+      !(message instanceof Uint8Array) ||
+      !(signature instanceof Uint8Array)
+    ) {
+      throw new Error(
+        'bad encoding, message and signature should be Uint8Array'
+      );
+    }
+
+    const sig = decodeSignature(bytesToString(signature));
+
     switch (this._algo) {
       case SIGNING_ALGO_RSA.name:
       case SIGNING_ALGO_ED25519.name:
-        return this._key.verify(msg, sig);
+        return this._key.verify(message, sig);
 
       default:
         throw new Error(`Unsupported signing algorithm "${this._algo}"`);

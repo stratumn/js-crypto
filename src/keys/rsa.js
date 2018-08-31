@@ -1,6 +1,8 @@
 import { rsa, pki, md, util } from 'node-forge';
 import { SymmetricKey } from '../aes';
 
+import { bytesToString } from '../utils';
+
 // ============================================================================
 // ====                           PRIVATE KEY                              ====
 // ============================================================================
@@ -20,7 +22,7 @@ export class RSAPrivateKey {
 
   sign = message => {
     const hash = md.sha256.create();
-    hash.update(message, 'utf-8');
+    hash.update(bytesToString(message));
     return this._key.sign(hash);
   };
 
@@ -55,7 +57,7 @@ export class RSAPublicKey {
 
   verify = (message, signature) => {
     const hash = md.sha256.create();
-    hash.update(message, 'utf-8');
+    hash.update(bytesToString(message));
     return this._key.verify(hash.digest().bytes(), signature);
   };
 

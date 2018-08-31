@@ -7,6 +7,8 @@ Crypto library - works both in node and in the browsers.
 This library contains all we need for cryptography in javascript in a browser-compatible way.
 All keys and signatures should also be compatible with [go-crypto](https://github.com/stratumn/go-crypto).
 
+**REQUIREMENT**: Your platform should support Uint8Array for this library to work correctly. See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array#Browser_compatibility
+
 ---
 
 ## **Signatures**
@@ -62,10 +64,16 @@ const key = new sig.SigningPrivateKey({
 });
 ```
 
-and then use that key to sign a message:
+You can then use the private key to sign a Uint8Array message:
 
 ```javascript
-const signature = key.sign('some message');
+import { utils } from '@stratumn/js-crypto';
+
+const msgBytes = utils.stringToBytes('some message');
+const signature = key.sign(msgBytes);
+
+// signature is a protobuf object. You can serialize it by doing:
+const serializedSignature = utils.serializeSignature(signature);
 ```
 
 The private key can be exported by doing
@@ -96,11 +104,27 @@ const pemKey =
 const key = new sig.SigningPublicKey({ pemPublicKey: pemKey });
 ```
 
-The public key is used to verify a signature:
+The public key is used to verify a signature. The signature and message fields of the verify method should be Uint8Arrays.
 
 ```javascript
-const sig = '-----BEGIN MESSAGE-----...';
-const ok = key.verify({ message: 'some message', signature: sig });
+import { utils } from '@stratumn/js-crypto';
+
+// The sigObj is the output of the sign method
+const serializedSignature = {
+  signature: 'deadbeef',
+  message: '123456',
+  public_key: 'ba5e64'
+};
+
+const sig = utils.deserializeSignature(serializedSignature);
+
+// sig = {
+//  signature: Uint8Array{},
+//  message: Uint8Array{},
+//  public_key: Uint8Array{}
+
+// Verify the signature
+const ok = key.verify(sig);
 ```
 
 ---

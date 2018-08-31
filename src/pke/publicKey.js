@@ -1,7 +1,7 @@
 import { pki } from 'node-forge';
 import { RSAPublicKey } from '../keys/rsa';
 import { PKE_ALGO_RSA } from './constants';
-import { encodePublicKey, decodePublicKey } from '../utils';
+import { encodePublicKey, decodePublicKey } from '../utils/encoding';
 
 export default class EncryptionPublicKey {
   constructor({ publicKey, pemPublicKey, algo }) {
