@@ -25,7 +25,7 @@
     "node-forge": "^0.7.5"
   },
   "devDependencies": {
-    "@stratumn/eslint-config": "^0.0.12",
+    "@stratumn/eslint-config": "^0.0.13",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-eslint": "^8.2.6",
