@@ -171,16 +171,12 @@ const key = new pke.EncryptionPrivateKey({
 and then use that key to decrypt a message:
 
 ```javascript
-const message = key.decrypt('ciphertext', opts);
+const message = key.decrypt(ciphertext);
 ```
 
-where opts is an object containing the decryption options. For example, in the case of RSA + AES-GCM, opts contain:
+where ciphertext is a string containing the encrypted message and the decryption options.
 
-- encryptedAESKey: the encryption of the symmetric key
-- iv: the initialization vector
-- tag: the authentication tag
-
-The decryption opptions are supposed to be returned by the encryption (see below).
+The ciphertext is the result of the encryption (see below).
 
 The private key can be exported by doing
 
@@ -213,5 +209,5 @@ const key = new pke.EncryptionPublicKey({ pemPublicKey: pemKey });
 The public key is used to encrypt a message:
 
 ```javascript
-const { ciphertext, opts...} = key.encrypt('some text message');
+const ciphertext = key.encrypt('some text message');
 ```
