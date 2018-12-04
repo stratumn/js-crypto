@@ -1,19 +1,18 @@
-import { SymmetricKey } from '../aes';
-import { Buffer } from 'safe-buffer';
 import { util } from 'node-forge';
+import { SymmetricKey } from '../aes';
 
-const mockGetBytesSync = jest.fn().mockReturnValue(new Buffer.from('Salt'));
+const mockGetBytesSync = jest.fn().mockReturnValue(Buffer.from('Salt'));
 const mockCipher = {
   start: jest.fn(),
   update: jest.fn(),
   finish: jest.fn(),
   output: {
-    bytes: jest.fn().mockReturnValue(new Buffer.from('Ciphertext')),
+    bytes: jest.fn().mockReturnValue(Buffer.from('Ciphertext')),
     data: 'decrypted'
   },
   mode: {
     tag: {
-      bytes: jest.fn().mockReturnValue(new Buffer.from('Tag'))
+      bytes: jest.fn().mockReturnValue(Buffer.from('Tag'))
     }
   }
 };
@@ -61,30 +60,32 @@ describe('SymmetricKey', () => {
 
       expect(encrypted).toEqual(util.encode64('SaltCiphertextTag'));
     });
-  });
 
-  it('errors if the ciphertext is badly formatted', () => {
-    expect(() => key.decrypt('test')).toThrow('wrong ciphertext format');
-  });
-
-  it('decrypts a message', () => {
-    const encrypted = key.decrypt(
-      util.encode64('SALTLENGTH12<ciphertext>TAGLENGTHSIXTEEN')
-    );
-
-    expect(mockCreateDecipher).toHaveBeenCalledWith(
-      'AES-GCM',
-      expect.anything()
-    );
-    expect(mockCipher.start).toHaveBeenCalledWith({
-      tag: 'TAGLENGTHSIXTEEN',
-      iv: 'SALTLENGTH12'
+    it('errors if the ciphertext is badly formatted', () => {
+      expect(() => key.decrypt('test')).toThrow('wrong ciphertext format');
     });
-    expect(mockCipher.update).toHaveBeenCalledWith(
-      util.createBuffer('<ciphertext>')
-    );
-    expect(mockCipher.finish).toHaveBeenCalledTimes(1);
+  });
 
-    expect(encrypted).toEqual('decrypted');
+  describe('decryption', () => {
+    it('decrypts a message', () => {
+      const encrypted = key.decrypt(
+        util.encode64('SALTLENGTH12<ciphertext>TAGLENGTHSIXTEEN')
+      );
+
+      expect(mockCreateDecipher).toHaveBeenCalledWith(
+        'AES-GCM',
+        expect.anything()
+      );
+      expect(mockCipher.start).toHaveBeenCalledWith({
+        tag: 'TAGLENGTHSIXTEEN',
+        iv: 'SALTLENGTH12'
+      });
+      expect(mockCipher.update).toHaveBeenCalledWith(
+        util.createBuffer('<ciphertext>')
+      );
+      expect(mockCipher.finish).toHaveBeenCalledTimes(1);
+
+      expect(encrypted).toEqual('decrypted');
+    });
   });
 });
