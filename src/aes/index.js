@@ -27,8 +27,8 @@ export class SymmetricKey {
     ci.update(util.createBuffer(message));
     ci.finish();
 
-    const encryptedBytes = `${iv}${ci.output.bytes()}${ci.mode.tag.bytes()}`;
-    return util.encode64(encryptedBytes);
+    const ciphertext = `${iv}${ci.output.bytes()}${ci.mode.tag.bytes()}`;
+    return util.encode64(ciphertext);
   };
 
   /*
@@ -36,11 +36,11 @@ export class SymmetricKey {
     It accepts a message formatted as follows:
       - base64(<iv><ciphertext><tag>)
   */
-  decrypt = cipherText => {
-    if (cipherText.length <= SALT_LENGTH + TAG_LENGTH) {
+  decrypt = ciphertext => {
+    if (ciphertext.length <= SALT_LENGTH + TAG_LENGTH) {
       throw new Error('wrong ciphertext format');
     }
-    const encryptedBytes = util.decode64(cipherText);
+    const encryptedBytes = util.decode64(ciphertext);
     const iv = encryptedBytes.slice(0, SALT_LENGTH);
     const tag = encryptedBytes.slice(-TAG_LENGTH);
     const ct = encryptedBytes.slice(SALT_LENGTH, -TAG_LENGTH);

@@ -49,8 +49,10 @@ export default class EncryptionPrivateKey {
     }
   };
 
+  // decrypt should be used for message encrypted with pke.EncryptionPublicKey.encrypt()
   decrypt = ciphertext => this._key.decrypt(ciphertext);
 
+  // decrypt should be used for message encrypted with pke.EncryptionPublicKey.encryptShort()
   decryptShort = ciphertext => this._key.decryptShort(ciphertext);
 
   export = (password = null) => {
