@@ -70,12 +70,20 @@ describe('Encryption', () => {
 
         it('should decrypt message', () => {
           const key = new EncryptionPrivateKey({ pemPrivateKey: v.priv });
-          const { ciphertext, iv, tag, encryptedKey } = v.encMessage;
-          const plaintext = key.decrypt(ciphertext, {
-            encryptedAESKey: encryptedKey,
-            iv,
-            tag
-          });
+          const plaintext = key.decrypt(v.ciphertext);
+          expect(plaintext).toBe(cases.message);
+        });
+
+        it('errors when message is badly formatted', () => {
+          const key = new EncryptionPrivateKey({ pemPrivateKey: v.priv });
+          expect(() => key.decrypt('message')).toThrow(
+            'wrong ciphertext format'
+          );
+        });
+
+        it('should decrypt a short message', () => {
+          const key = new EncryptionPrivateKey({ pemPrivateKey: v.priv });
+          const plaintext = key.decryptShort(v.shortCiphertext);
           expect(plaintext).toBe(cases.message);
         });
       });
@@ -91,8 +99,18 @@ describe('Encryption', () => {
           const sk = new EncryptionPrivateKey({ pemPrivateKey: v.priv });
           const msg = 'plap';
 
-          const { ciphertext, ...opts } = pk.encrypt(msg);
-          const plaintext = sk.decrypt(ciphertext, opts);
+          const ciphertext = pk.encrypt(msg);
+          const plaintext = sk.decrypt(ciphertext);
+          expect(plaintext).toBe(msg);
+        });
+
+        it('should encrypt a short message', () => {
+          const pk = new EncryptionPublicKey({ pemPublicKey: v.pub });
+          const sk = new EncryptionPrivateKey({ pemPrivateKey: v.priv });
+          const msg = 'plap';
+
+          const ciphertext = pk.encrypt(msg);
+          const plaintext = sk.decrypt(ciphertext);
           expect(plaintext).toBe(msg);
         });
       });
