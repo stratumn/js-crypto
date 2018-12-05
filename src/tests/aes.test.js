@@ -15,11 +15,6 @@ describe('SymmetricKey', () => {
           const plaintext = key.decrypt(ciphertext);
           expect(plaintext).toBe(msg);
         });
-
-        it('errors if the ciphertext is badly formatted', () => {
-          const key = new SymmetricKey(v.key);
-          expect(() => key.decrypt('test')).toThrow('wrong ciphertext format');
-        });
       });
 
       describe('decryption', () => {
@@ -63,6 +58,11 @@ describe('SymmetricKey', () => {
           expect(() => key.decrypt(badCiphertext)).toThrow(
             'error while decrypting'
           );
+        });
+
+        it('errors if the ciphertext is badly formatted', () => {
+          const key = new SymmetricKey(v.key);
+          expect(() => key.decrypt('test')).toThrow('wrong ciphertext format');
         });
       });
     });
