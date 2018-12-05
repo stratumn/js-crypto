@@ -14,7 +14,7 @@ export class RSAPrivateKey {
   }
 
   generate = () => {
-    this._key = rsa.generateKeyPair({ bits: 2048, e: 0x10001 }).privateKey;
+    this._key = rsa.generateKeyPair({ bits: 2048 }).privateKey;
   };
 
   publicKey = () =>
@@ -27,8 +27,12 @@ export class RSAPrivateKey {
   };
 
   decrypt = ciphertext => {
+    // the length of the encrypted aes key is equal to
+    // the modulus of the RSA key.
+    const modulus = this._key.n.bitLength() / 8;
+
     const decodedBytes = util.decode64(ciphertext);
-    const encryptedAESKey = decodedBytes.slice(0, SymmetricKey.size);
+    const encryptedAESKey = decodedBytes.slice(0, modulus);
     const message = decodedBytes.slice(SymmetricKey.size);
 
     if (!encryptedAESKey || !message) {

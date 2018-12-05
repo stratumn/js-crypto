@@ -1,9 +1,9 @@
 import { util, random, cipher } from 'node-forge';
 
 // length of the salt in bytes.
-const SALT_LENGTH = 12;
+export const SALT_LENGTH = 12;
 // length of the tag in bytes.
-const TAG_LENGTH = 16;
+export const TAG_LENGTH = 16;
 
 export class SymmetricKey {
   static size = 256;
@@ -22,7 +22,8 @@ export class SymmetricKey {
     const iv = random.getBytesSync(SALT_LENGTH);
     const ci = cipher.createCipher('AES-GCM', this._key);
 
-    // the tag length is expressed in bits.
+    // 128 bits is the default MAC tag length that forge uses
+    // but we set it explicitly for clarity purposes.
     ci.start({ iv, tagLength: TAG_LENGTH * 8 });
     ci.update(util.createBuffer(message));
     ci.finish();
@@ -48,8 +49,9 @@ export class SymmetricKey {
     const de = cipher.createDecipher('AES-GCM', this._key);
     de.start({ iv, tag });
     de.update(util.createBuffer(ct));
-    de.finish();
-
+    if (!de.finish()) {
+      throw new Error('error while decrypting');
+    }
     return de.output.data;
   };
 

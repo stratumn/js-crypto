@@ -1,91 +1,70 @@
-import { util } from 'node-forge';
-import { SymmetricKey } from '../aes';
+import { util, random } from 'node-forge';
 
-const mockGetBytesSync = jest.fn().mockReturnValue(Buffer.from('Salt'));
-const mockCipher = {
-  start: jest.fn(),
-  update: jest.fn(),
-  finish: jest.fn(),
-  output: {
-    bytes: jest.fn().mockReturnValue(Buffer.from('Ciphertext')),
-    data: 'decrypted'
-  },
-  mode: {
-    tag: {
-      bytes: jest.fn().mockReturnValue(Buffer.from('Tag'))
-    }
-  }
-};
-const mockCreateCipher = jest.fn().mockReturnValue(mockCipher);
-const mockCreateDecipher = jest.fn().mockReturnValue(mockCipher);
-
-jest.mock('node-forge', () => ({
-  util: jest.requireActual('node-forge').util,
-  random: {
-    getBytesSync: length => mockGetBytesSync(length)
-  },
-  cipher: {
-    createCipher: (cipher, key) => mockCreateCipher(cipher, key),
-    createDecipher: (cipher, key) => mockCreateDecipher(cipher, key)
-  }
-}));
+import cases from './cases.json';
+import { SymmetricKey, SALT_LENGTH, TAG_LENGTH } from '../aes';
 
 describe('SymmetricKey', () => {
-  let key;
-  beforeEach(() => {
-    key = new SymmetricKey();
-    mockGetBytesSync.mockClear();
-    mockCreateDecipher.mockClear();
-    mockCreateCipher.mockClear();
-    mockCipher.start.mockClear();
-    mockCipher.update.mockClear();
-    mockCipher.start.mockClear();
-    mockCipher.finish.mockClear();
-  });
+  Object.entries(cases.aes).forEach(([k, v]) => {
+    describe(k, () => {
+      describe('encryption', () => {
+        it('encrypts a message', () => {
+          const key = new SymmetricKey(v.key);
+          const msg = 'plap';
 
-  describe('encryption', () => {
-    it('encrypts a message', () => {
-      const encrypted = key.encrypt('message');
+          const ciphertext = key.encrypt(msg);
+          const plaintext = key.decrypt(ciphertext);
+          expect(plaintext).toBe(msg);
+        });
 
-      expect(mockGetBytesSync).toHaveBeenCalledWith(12);
-      expect(mockCreateCipher).toHaveBeenCalledWith(
-        'AES-GCM',
-        expect.anything()
-      );
-      expect(mockCipher.start).toHaveBeenCalledTimes(1);
-      expect(mockCipher.update).toHaveBeenCalledWith(
-        util.createBuffer('message')
-      );
-      expect(mockCipher.finish).toHaveBeenCalledTimes(1);
-
-      expect(encrypted).toEqual(util.encode64('SaltCiphertextTag'));
-    });
-
-    it('errors if the ciphertext is badly formatted', () => {
-      expect(() => key.decrypt('test')).toThrow('wrong ciphertext format');
-    });
-  });
-
-  describe('decryption', () => {
-    it('decrypts a message', () => {
-      const encrypted = key.decrypt(
-        util.encode64('SALTLENGTH12<ciphertext>TAGLENGTHSIXTEEN')
-      );
-
-      expect(mockCreateDecipher).toHaveBeenCalledWith(
-        'AES-GCM',
-        expect.anything()
-      );
-      expect(mockCipher.start).toHaveBeenCalledWith({
-        tag: 'TAGLENGTHSIXTEEN',
-        iv: 'SALTLENGTH12'
+        it('errors if the ciphertext is badly formatted', () => {
+          const key = new SymmetricKey(v.key);
+          expect(() => key.decrypt('test')).toThrow('wrong ciphertext format');
+        });
       });
-      expect(mockCipher.update).toHaveBeenCalledWith(
-        util.createBuffer('<ciphertext>')
-      );
-      expect(mockCipher.finish).toHaveBeenCalledTimes(1);
 
-      expect(encrypted).toEqual('decrypted');
+      describe('decryption', () => {
+        it('decrypts a message', () => {
+          const key = new SymmetricKey(v.key);
+          const encrypted = key.decrypt(v.ciphertext);
+
+          expect(encrypted).toEqual(cases.message);
+        });
+
+        it('fails if the salt is modified', () => {
+          const key = new SymmetricKey(v.key);
+
+          const iv = random.getBytesSync(SALT_LENGTH);
+          const badIv = util.encode64(
+            `${iv}${util.decode64(v.ciphertext).slice(SALT_LENGTH)}`
+          );
+          expect(() => key.decrypt(badIv)).toThrow('error while decrypting');
+        });
+
+        it('fails if the tag does not match', () => {
+          const key = new SymmetricKey(v.key);
+
+          const tag = random.getBytesSync(TAG_LENGTH);
+          const badTag = util.encode64(
+            `${util.decode64(v.ciphertext).slice(0, -TAG_LENGTH)}${tag}`
+          );
+          expect(() => key.decrypt(badTag)).toThrow('error while decrypting');
+        });
+
+        it('fails if the ciphertext does not match', () => {
+          const key = new SymmetricKey(v.key);
+
+          const decodedBytes = util.decode64(v.ciphertext);
+          const iv = decodedBytes.slice(0, SALT_LENGTH);
+          const tag = decodedBytes.slice(-TAG_LENGTH);
+          const ct = random.getBytesSync(
+            decodedBytes.slice(SALT_LENGTH, -TAG_LENGTH).length
+          );
+          const badCiphertext = util.encode64(`${iv}${ct}${tag}`);
+          expect(() => key.decrypt(badCiphertext)).toThrow(
+            'error while decrypting'
+          );
+        });
+      });
     });
   });
 });

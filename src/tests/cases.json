@@ -23,5 +23,11 @@
       "ciphertext": "I40LTO2aAQheuFPEfgbke0TaofIMpFWvgrKI6q+gB9qsQQdADvTn+n00q2eTvK22p7txC1ty+wyBwFGnZwrIwE7k1A1t8W4+12mGlCbPrJMO7ubZvgkpahOiME1emlbvgjQRMhuc2heuCCsiO8yPFVC6/C7XShxiRafPnotdYbyAWd9OGc/Wy32G4U5svjkMz8RLNZp1D6aEUaNN3hcAO1aFj4yZrsOGLuLZfQpnNNsMM+JwgVrTvGGeUzSOPx07RID//TDJ+Qv8bn7s5WVg2zzIcoFFmdMWRmte6XuU1dGYZkKKilK5EmGiNC3+15GNRtoEow/kSJ4PnpSgOKvfGw==i6Bt4mb73HWuCka1Of7d4eWMyklfEyeeI4ke5khHsEGk+FAsv0VsvbIkYmYMW0znH7Li8dzmzP42v0K1gWk=",
       "shortCiphertext": "A9ZtekEBvZBbxsLG36C8Nc0RLMPQL6uDhZ+E7bRGiQBgW9MdyI5niizNRCgx71OxQEuMGYWGuFrvTnP79sJ3z8PEq3OneYrmghU+dw5BfrvsXpvOkw4SUulV5EnwjrAvLvWtfkAelVQWsYte/xalSMv4NHMitui1SD/SUQnqg64u/afp53z5PRXKW5VOVl5yrprXOJ2KL6rTxijz/m3DLOefGzaFhW4LgYLjaebZ1upHEci8h6Mz/KI2GyciNAM+bt7FtEEntX8PRJVuIKPbds3arIUQBaYbBVt3QKqbd7KhHfwfw8sRT28O0wapz8KPNaOWmWKDDusz7NtKf52Phg=="
     }
+  },
+  "aes": {
+    "GCM": {
+      "key": "dXRdc1KYm8DVFFxc0Hq65ZVoZvHAD/PBx0GUgSMmPEw=",
+      "ciphertext": "FfogaZ5Wy4oDfCDqQQUtciiZf/6CsZxrBQr2ZHVswimxB7IwQw9Z8brNocu3O5q1DKYaP4cBmzcPi++1mE4="
+    }
   }
 }
