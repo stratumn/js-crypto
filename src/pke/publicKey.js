@@ -33,8 +33,11 @@ export default class EncryptionPublicKey {
     }
   };
 
-  // encrypt returns an object that can be destructured like { ciphertext, opts... }
+  // encrypt uses symmetric encryption under the hood in order to encrypt large messages.
   encrypt = message => this._key.encrypt(message);
+
+  // encryptShort provides pure asymetric encryption but does not support messages larger than 256 bytes.
+  encryptShort = message => this._key.encryptShort(message);
 
   export = () => {
     let asn1PublicKey;

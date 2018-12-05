@@ -49,9 +49,11 @@ export default class EncryptionPrivateKey {
     }
   };
 
-  // opts contains decryption options that depend on the algo.
-  // For RSA keys, opts = {encryptedAESKey, iv, tag}
-  decrypt = (ciphertext, opts) => this._key.decrypt(ciphertext, opts);
+  // decrypt should be used for message encrypted with pke.EncryptionPublicKey.encrypt()
+  decrypt = ciphertext => this._key.decrypt(ciphertext);
+
+  // decrypt should be used for message encrypted with pke.EncryptionPublicKey.encryptShort()
+  decryptShort = ciphertext => this._key.decryptShort(ciphertext);
 
   export = (password = null) => {
     let privateKeyInfo;
