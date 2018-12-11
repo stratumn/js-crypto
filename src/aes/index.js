@@ -6,8 +6,6 @@ export const SALT_LENGTH = 12;
 export const TAG_LENGTH = 16;
 
 export class SymmetricKey {
-  static size = 256;
-
   constructor(key = null) {
     if (!key) this._key = random.getBytesSync(32);
     else this._key = util.decode64(key);

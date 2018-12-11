@@ -33,7 +33,7 @@ export class RSAPrivateKey {
 
     const decodedBytes = util.decode64(ciphertext);
     const encryptedAESKey = decodedBytes.slice(0, modulus);
-    const message = decodedBytes.slice(SymmetricKey.size);
+    const message = decodedBytes.slice(modulus);
 
     if (!encryptedAESKey || !message) {
       throw new Error('wrong ciphertext format');
