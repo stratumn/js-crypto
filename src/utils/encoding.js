@@ -126,7 +126,16 @@ export const decodePrivateKey = (pemPrivateKey, password = null) => {
   let keyInfo;
   const msg = pem.decode(pemPrivateKey)[0];
   if (password) {
-    keyInfo = pki.decryptPrivateKeyInfo(asn1.fromDer(msg.body), password);
+    try {
+      // 'decryptPrivateKeyInfo' can either throw an exception
+      // or return null if the password is wrong.
+      keyInfo = pki.decryptPrivateKeyInfo(asn1.fromDer(msg.body), password);
+      if (!keyInfo) {
+        throw new Error('wrong password');
+      }
+    } catch (err) {
+      throw new Error('could not decode private key: wrong password');
+    }
   } else {
     if (msg.procType && msg.procType.type === 'ENCRYPTED') {
       throw new Error(

@@ -57,6 +57,16 @@ describe('Encryption', () => {
           expect(key.export()).toBe(v.priv);
         });
 
+        it('should fail to load private key when password is wrong', () => {
+          expect(
+            () =>
+              new EncryptionPrivateKey({
+                pemPrivateKey: v.encPriv,
+                password: 'bad'
+              })
+          ).toThrow('could not decode private key: wrong password');
+        });
+
         it('should export encrypted key', () => {
           const key = new EncryptionPrivateKey({ algo: k });
           const enc = key.export(cases.password);
