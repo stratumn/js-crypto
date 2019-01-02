@@ -231,7 +231,9 @@ The message summary should be a one-sentence description of the change. The issu
 Here are some good commit message summary examples:
 
 ```
+
 Build: Update Semaphore to only test Node 0.10 (refs #734)
 Fix: Semi rule incorrectly flagging extra semicolon (fixes #840)
 Upgrade: Express to 13.4.2, switch to using Express comment attachment (fixes #730)
+
 ```
