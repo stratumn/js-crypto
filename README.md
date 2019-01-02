@@ -211,3 +211,27 @@ The public key is used to encrypt a message:
 ```javascript
 const ciphertext = key.encrypt('some text message');
 ```
+
+## Release process
+
+We are using `semantic-release` to publish the package on the NPM registry. Publishing can be triggered by "promoting" a successful build on master from Semaphore UI.
+The commit message summary should follow the following format:
+
+`Tag: Message (fixes #1234)`
+
+Where `Tag` is one of the following:
+
+- Fix - for a bug fix. (patch)
+- Update - for a backwards-compatible enhancement. (minor)
+- New - implemented a new feature. (minor)
+- Breaking - for a backwards-incompatible enhancement. (major)
+
+The message summary should be a one-sentence description of the change. The issue number should be mentioned at the end. \* The commit message should say "(fixes #1234)" at the end of the description if it closes out an existing issue (replace 1234 with the issue number). If the commit doesn't completely fix the issue, then use (refs #1234) instead of (fixes #1234).
+
+Here are some good commit message summary examples:
+
+```
+Build: Update Semaphore to only test Node 0.10 (refs #734)
+Fix: Semi rule incorrectly flagging extra semicolon (fixes #840)
+Upgrade: Express to 13.4.2, switch to using Express comment attachment (fixes #730)
+```
