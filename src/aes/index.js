@@ -23,7 +23,7 @@ export class SymmetricKey {
     // 128 bits is the default MAC tag length that forge uses
     // but we set it explicitly for clarity purposes.
     ci.start({ iv, tagLength: TAG_LENGTH * 8 });
-    ci.update(util.createBuffer(message));
+    ci.update(util.createBuffer(message, 'utf8'));
     ci.finish();
 
     const ciphertext = `${iv}${ci.output.bytes()}${ci.mode.tag.bytes()}`;
@@ -50,7 +50,7 @@ export class SymmetricKey {
     if (!de.finish()) {
       throw new Error('error while decrypting');
     }
-    return de.output.data;
+    return de.output.toString();
   };
 
   export = () => ({

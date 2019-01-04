@@ -15,6 +15,16 @@ describe('SymmetricKey', () => {
           const plaintext = key.decrypt(ciphertext);
           expect(plaintext).toBe(msg);
         });
+
+        it('supports utf-8 characters', () => {
+          const key = new SymmetricKey(v.key);
+          const utf8Msg = '≤';
+
+          const ciphertext = key.encrypt(utf8Msg);
+          const plaintext = key.decrypt(ciphertext);
+
+          expect(plaintext).toEqual(utf8Msg);
+        });
       });
 
       describe('decryption', () => {
