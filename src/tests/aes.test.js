@@ -1,3 +1,5 @@
+import { readFile } from 'fs';
+import path from 'path';
 import { util, random } from 'node-forge';
 
 import cases from './cases.json';
@@ -24,6 +26,18 @@ describe('SymmetricKey', () => {
           const plaintext = key.decrypt(ciphertext);
 
           expect(plaintext).toEqual(utf8Msg);
+        });
+
+        it.only('supports binary characters', done => {
+          const key = new SymmetricKey(v.key);
+          const file = './fixtures/testPicture.jpg';
+          readFile(path.resolve(__dirname, file), (err, data) => {
+            expect(err).toBe(null);
+            const ciphertext = key.encrypt(data, true);
+            const plaintext = key.decrypt(ciphertext, true);
+            expect(plaintext).toEqual(data);
+            done();
+          });
         });
       });
 
