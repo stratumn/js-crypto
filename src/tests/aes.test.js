@@ -28,13 +28,13 @@ describe('SymmetricKey', () => {
           expect(plaintext).toEqual(utf8Msg);
         });
 
-        it.only('supports binary characters', done => {
+        it('supports binary characters', done => {
           const key = new SymmetricKey(v.key);
           const file = './fixtures/testPicture.jpg';
           readFile(path.resolve(__dirname, file), (err, data) => {
             expect(err).toBe(null);
-            const ciphertext = key.encrypt(data, true);
-            const plaintext = key.decrypt(ciphertext, true);
+            const ciphertext = key.encrypt(data, 'binary');
+            const plaintext = key.decrypt(ciphertext, 'binary');
             expect(plaintext).toEqual(data);
             done();
           });
