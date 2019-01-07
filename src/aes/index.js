@@ -13,17 +13,18 @@ export class SymmetricKey {
 
   /*
     Encrypts a message with the symmetric key.
+    The encoding may be specified with the following values: 'utf8' (default), 'ascii', 'binary'
     It formats the encrypted message as follows:
       - base64(<iv><ciphertext><tag>)
   */
-  encrypt = message => {
+  encrypt = (message, encoding = 'utf8') => {
     const iv = random.getBytesSync(SALT_LENGTH);
     const ci = cipher.createCipher('AES-GCM', this._key);
 
     // 128 bits is the default MAC tag length that forge uses
     // but we set it explicitly for clarity purposes.
     ci.start({ iv, tagLength: TAG_LENGTH * 8 });
-    ci.update(util.createBuffer(message));
+    ci.update(util.createBuffer(message, encoding));
     ci.finish();
 
     const ciphertext = `${iv}${ci.output.bytes()}${ci.mode.tag.bytes()}`;
@@ -32,10 +33,13 @@ export class SymmetricKey {
 
   /*
     Decrypts a message with the symmetric key.
+    The encoding may be specified with the following values: 'utf8' (default), 'ascii', 'binary'.
+    Returns the decoded message as a string except if the encoding is set to
+    'binary' (in which case the result will be a Buffer or an Uint8Array).
     It accepts a message formatted as follows:
       - base64(<iv><ciphertext><tag>)
   */
-  decrypt = ciphertext => {
+  decrypt = (ciphertext, encoding = 'utf8') => {
     if (ciphertext.length <= SALT_LENGTH + TAG_LENGTH) {
       throw new Error('wrong ciphertext format');
     }
@@ -50,7 +54,9 @@ export class SymmetricKey {
     if (!de.finish()) {
       throw new Error('error while decrypting');
     }
-    return de.output.data;
+    return encoding === 'binary'
+      ? Buffer.from(de.output.data, 'binary')
+      : de.output.toString(encoding);
   };
 
   export = () => ({
