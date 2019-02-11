@@ -77,9 +77,7 @@ export class ED25519PublicKey {
           asn1.Type.OID,
           false,
           asn1.oidToDer(ED25519_OID).getBytes()
-        ),
-        // parameters (null)
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+        )
       ]),
       // subjectPublicKey
       asn1.create(
