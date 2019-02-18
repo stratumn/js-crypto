@@ -82,9 +82,9 @@ export class RSAPublicKey {
 
     // Encrypt symmetric key with public key
     const { key } = symmetricKey.export();
-    const encryptedAESKey = util.encode64(this._key.encrypt(key, 'RSA-OAEP'));
+    const encryptedAESKey = this._key.encrypt(key, 'RSA-OAEP');
 
-    return `${encryptedAESKey}${ciphertext}`;
+    return util.encode64(`${encryptedAESKey}${util.decode64(ciphertext)}`);
   };
 
   encryptShort = message =>
