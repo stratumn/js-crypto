@@ -11,7 +11,7 @@ export default class EncryptionKeyPair {
   constructor(opts) {
     // opts can contain either pemPrivateKey and password to load a key
     // or algo to generate a new one. It can also forgo key generation
-    // to use the more preformant async option.
+    // to use the more performant async option.
     if (opts.generate !== false) {
       this._privateKey = new EncryptionPrivateKey(opts);
       this._publicKey = this._privateKey.publicKey();
