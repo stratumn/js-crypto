@@ -5,10 +5,23 @@ import { PKE_ALGO_RSA } from './constants';
 import { encodePrivateKeyInfo, decodePrivateKey } from '../utils/encoding';
 
 export default class EncryptionPrivateKey {
-  constructor({ algo, pemPrivateKey, password }) {
+  static generateAsync = async algo => {
+    const privateKey = new EncryptionPrivateKey({ generate: false });
+    privateKey._algo = algo;
+    switch (algo) {
+      case PKE_ALGO_RSA.name: {
+        privateKey._key = await RSAPrivateKey.generateAsync();
+        return privateKey;
+      }
+      default:
+        throw new Error(`Unsupported encryption algorithm "${algo}"`);
+    }
+  };
+
+  constructor({ algo, pemPrivateKey, password, generate = true }) {
     if (pemPrivateKey) {
       this.load(pemPrivateKey, password);
-    } else {
+    } else if (generate) {
       this.generate(algo);
     }
   }

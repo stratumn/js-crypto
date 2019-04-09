@@ -8,9 +8,22 @@ import { bytesToString } from '../utils';
 // ============================================================================
 
 export class RSAPrivateKey {
-  constructor(key = null) {
-    if (!key) this.generate();
-    else this._key = key;
+  static generateAsync = () =>
+    new Promise((resolve, reject) => {
+      rsa.generateKeyPair(
+        { bits: 2048, workers: -1 },
+        (err, { privateKey }) => {
+          if (err) return reject(err);
+          const key = new RSAPrivateKey(null, false);
+          key._key = privateKey;
+          return resolve(key);
+        }
+      );
+    });
+
+  constructor(key = null, generate = true) {
+    if (key) this._key = key;
+    else if (generate) this.generate();
   }
 
   generate = () => {
