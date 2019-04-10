@@ -16,6 +16,12 @@ describe('Encryption', () => {
           expect(kp.public).not.toBeFalsy();
         });
 
+        it('should generate asynchronously', async () => {
+          const kp = await EncryptionKeyPair.generateAsync(k);
+          expect(kp.private).not.toBeFalsy();
+          expect(kp.public).not.toBeFalsy();
+        });
+
         it('should load private key', () => {
           const kp = new EncryptionKeyPair({ pemPrivateKey: v.priv });
           expect(kp.private.export()).toBe(v.priv);
