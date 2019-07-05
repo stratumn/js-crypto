@@ -3,7 +3,7 @@
 Crypto library - works both in node and in the browsers.
 
 This library contains all we need for cryptography in javascript in a browser-compatible way.
-All keys and signatures should also be compatible with [go-crypto](https://github.com/stratumn/go-crypto).
+All keys and signatures should also be compatible with [go-crypto](https://github.com/stratumn/go-crypto). We keep adding and making changes to it, so use it at your own risk. Stratumn will not be responsible for any issue that may arise if you use it in your systems.
 
 **REQUIREMENT**: Your platform should support Uint8Array for this library to work correctly. See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array#Browser_compatibility
 
