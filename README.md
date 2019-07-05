@@ -2,8 +2,6 @@
 
 Crypto library - works both in node and in the browsers.
 
-**DISCLAIMER**: THIS LIBRARY IS FAR FROM BEING PROD READY, USE IT AT YOUR OWN RISK.
-
 This library contains all we need for cryptography in javascript in a browser-compatible way.
 All keys and signatures should also be compatible with [go-crypto](https://github.com/stratumn/go-crypto).
 
