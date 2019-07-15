@@ -25,7 +25,7 @@
   },
   "homepage": "https://github.com/stratumn/js-crypto#readme",
   "dependencies": {
-    "node-forge": "^0.7.5"
+    "node-forge": "^0.8.5"
   },
   "devDependencies": {
     "@semantic-release/git": "^7.0.7",
