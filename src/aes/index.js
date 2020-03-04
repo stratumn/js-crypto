@@ -5,6 +5,9 @@ export const SALT_LENGTH = 12;
 // length of the tag in bytes.
 export const TAG_LENGTH = 16;
 
+export const CIPHERTEXT_ENCODING_BIN = 'binary';
+export const CIPHERTEXT_ENCODING_B64 = CIPHERTEXT_ENCODING_B64;
+
 export class SymmetricKey {
   constructor(key = null) {
     if (!key) this._key = random.getBytesSync(32);
@@ -20,11 +23,15 @@ export class SymmetricKey {
   encrypt = (
     message,
     plaintextEncoding = 'utf8',
-    cipherTextEncoding = 'base64'
+    ciphertextEncoding = CIPHERTEXT_ENCODING_B64
   ) => {
-    if (!['binary', 'base64'].includes(cipherTextEncoding))
+    if (
+      ![CIPHERTEXT_ENCODING_BIN, CIPHERTEXT_ENCODING_B64].includes(
+        ciphertextEncoding
+      )
+    )
       throw new Error(
-        `Invalid output encoding ${cipherTextEncoding}; should be "base64" or "binary"`
+        `Invalid output encoding ${ciphertextEncoding}; should be "${CIPHERTEXT_ENCODING_BIN}" or "${CIPHERTEXT_ENCODING_B64}"`
       );
     const iv = random.getBytesSync(SALT_LENGTH);
     const ci = cipher.createCipher('AES-GCM', this._key);
@@ -36,7 +43,7 @@ export class SymmetricKey {
     ci.finish();
 
     const ciphertext = `${iv}${ci.output.bytes()}${ci.mode.tag.bytes()}`;
-    if (cipherTextEncoding === 'binary') return ciphertext;
+    if (ciphertextEncoding === CIPHERTEXT_ENCODING_BIN) return ciphertext;
     return util.encode64(ciphertext);
   };
 
@@ -46,22 +53,28 @@ export class SymmetricKey {
     Returns the decoded message as a string except if the encoding is set to
     'binary' (in which case the result will be a Buffer or an Uint8Array).
     It accepts a message formatted as follows:
-      - cipherTextEncoding(<iv><ciphertext><tag>)
+      - ciphertextEncoding(<iv><ciphertext><tag>)
   */
   decrypt = (
     ciphertext,
     plaintextEncoding = 'utf8',
-    cipherTextEncoding = 'base64'
+    ciphertextEncoding = CIPHERTEXT_ENCODING_B64
   ) => {
     if (ciphertext.length <= SALT_LENGTH + TAG_LENGTH) {
       throw new Error('wrong ciphertext format');
     }
-    if (!['binary', 'base64'].includes(cipherTextEncoding))
+    if (
+      ![CIPHERTEXT_ENCODING_BIN, CIPHERTEXT_ENCODING_B64].includes(
+        ciphertextEncoding
+      )
+    )
       throw new Error(
-        `Invalid input encoding ${cipherTextEncoding}; should be "base64" or "binary"`
+        `Invalid input encoding ${ciphertextEncoding}; should be "${CIPHERTEXT_ENCODING_BIN}" or "${CIPHERTEXT_ENCODING_B64}"`
       );
     const encryptedBytes =
-      cipherTextEncoding === 'binary' ? ciphertext : util.decode64(ciphertext);
+      ciphertextEncoding === CIPHERTEXT_ENCODING_BIN
+        ? ciphertext
+        : util.decode64(ciphertext);
     const iv = encryptedBytes.slice(0, SALT_LENGTH);
     const tag = encryptedBytes.slice(-TAG_LENGTH);
     const ct = encryptedBytes.slice(SALT_LENGTH, -TAG_LENGTH);
