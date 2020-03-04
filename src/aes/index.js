@@ -17,10 +17,14 @@ export class SymmetricKey {
     It formats the encrypted message as follows:
       - base64(<iv><ciphertext><tag>)
   */
-  encrypt = (message, inputEncoding = 'utf8', outputEncoding = 'base64') => {
-    if (!['binary', 'base64'].includes(outputEncoding))
+  encrypt = (
+    message,
+    plaintextEncoding = 'utf8',
+    cipherTextEncoding = 'base64'
+  ) => {
+    if (!['binary', 'base64'].includes(cipherTextEncoding))
       throw new Error(
-        `Invalid output encoding ${outputEncoding}; should be "base64" or "binary"`
+        `Invalid output encoding ${cipherTextEncoding}; should be "base64" or "binary"`
       );
     const iv = random.getBytesSync(SALT_LENGTH);
     const ci = cipher.createCipher('AES-GCM', this._key);
@@ -28,11 +32,11 @@ export class SymmetricKey {
     // 128 bits is the default MAC tag length that forge uses
     // but we set it explicitly for clarity purposes.
     ci.start({ iv, tagLength: TAG_LENGTH * 8 });
-    ci.update(util.createBuffer(message, inputEncoding));
+    ci.update(util.createBuffer(message, plaintextEncoding));
     ci.finish();
 
     const ciphertext = `${iv}${ci.output.bytes()}${ci.mode.tag.bytes()}`;
-    if (outputEncoding === 'binary') return ciphertext;
+    if (cipherTextEncoding === 'binary') return ciphertext;
     return util.encode64(ciphertext);
   };
 
@@ -42,18 +46,22 @@ export class SymmetricKey {
     Returns the decoded message as a string except if the encoding is set to
     'binary' (in which case the result will be a Buffer or an Uint8Array).
     It accepts a message formatted as follows:
-      - inputEncoding(<iv><ciphertext><tag>)
+      - cipherTextEncoding(<iv><ciphertext><tag>)
   */
-  decrypt = (ciphertext, outputEncoding = 'utf8', inputEncoding = 'base64') => {
+  decrypt = (
+    ciphertext,
+    plaintextEncoding = 'utf8',
+    cipherTextEncoding = 'base64'
+  ) => {
     if (ciphertext.length <= SALT_LENGTH + TAG_LENGTH) {
       throw new Error('wrong ciphertext format');
     }
-    if (!['binary', 'base64'].includes(inputEncoding))
+    if (!['binary', 'base64'].includes(cipherTextEncoding))
       throw new Error(
-        `Invalid input encoding ${inputEncoding}; should be "base64" or "binary"`
+        `Invalid input encoding ${cipherTextEncoding}; should be "base64" or "binary"`
       );
     const encryptedBytes =
-      inputEncoding === 'binary' ? ciphertext : util.decode64(ciphertext);
+      cipherTextEncoding === 'binary' ? ciphertext : util.decode64(ciphertext);
     const iv = encryptedBytes.slice(0, SALT_LENGTH);
     const tag = encryptedBytes.slice(-TAG_LENGTH);
     const ct = encryptedBytes.slice(SALT_LENGTH, -TAG_LENGTH);
@@ -65,14 +73,13 @@ export class SymmetricKey {
       throw new Error('error while decrypting');
     }
 
-    if (outputEncoding === 'binary') {
+    if (plaintextEncoding === 'binary') {
       const decrypted = de.output.data;
       let res = Buffer.alloc(0);
       // Encode the decrpyted data per block of 4MB
       const chunkSize = 1024 * 1024 * 4; // 4MB
       let index = 0;
       do {
-        console.log('block ', index);
         res = Buffer.concat([
           res,
           Buffer.from(decrypted.substr(index, chunkSize), 'binary')
@@ -82,7 +89,7 @@ export class SymmetricKey {
 
       return res;
     }
-    return de.output.toString(outputEncoding);
+    return de.output.toString(plaintextEncoding);
   };
 
   export = () => ({
