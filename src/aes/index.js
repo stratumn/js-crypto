@@ -6,7 +6,7 @@ export const SALT_LENGTH = 12;
 export const TAG_LENGTH = 16;
 
 export const CIPHERTEXT_ENCODING_BIN = 'binary';
-export const CIPHERTEXT_ENCODING_B64 = CIPHERTEXT_ENCODING_B64;
+export const CIPHERTEXT_ENCODING_B64 = 'base64';
 
 export class SymmetricKey {
   constructor(key = null) {
