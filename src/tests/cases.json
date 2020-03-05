@@ -27,7 +27,8 @@
   "aes": {
     "GCM": {
       "key": "dXRdc1KYm8DVFFxc0Hq65ZVoZvHAD/PBx0GUgSMmPEw=",
-      "ciphertext": "FfogaZ5Wy4oDfCDqQQUtciiZf/6CsZxrBQr2ZHVswimxB7IwQw9Z8brNocu3O5q1DKYaP4cBmzcPi++1mE4="
+      "ciphertext": "FfogaZ5Wy4oDfCDqQQUtciiZf/6CsZxrBQr2ZHVswimxB7IwQw9Z8brNocu3O5q1DKYaP4cBmzcPi++1mE4=",
+      "ciphertextBinary": "FfogaZ5Wy4oDfCDqQQUtciiZf/6CsZxrBQr2ZHVswimxB7IwQw9Z8brNocu3O5q1DKYaP4cBmzcPi++1mE4="
     }
   }
 }

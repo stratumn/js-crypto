@@ -125,8 +125,8 @@ describe('Encryption', () => {
           const sk = new EncryptionPrivateKey({ pemPrivateKey: v.priv });
           const msg = 'plap';
 
-          const ciphertext = pk.encrypt(msg);
-          const plaintext = sk.decrypt(ciphertext);
+          const ciphertext = pk.encryptShort(msg);
+          const plaintext = sk.decryptShort(ciphertext);
           expect(plaintext).toBe(msg);
         });
       });

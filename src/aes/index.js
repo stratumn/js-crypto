@@ -5,6 +5,9 @@ export const SALT_LENGTH = 12;
 // length of the tag in bytes.
 export const TAG_LENGTH = 16;
 
+export const CIPHERTEXT_ENCODING_BIN = 'binary';
+export const CIPHERTEXT_ENCODING_B64 = 'base64';
+
 export class SymmetricKey {
   constructor(key = null) {
     if (!key) this._key = random.getBytesSync(32);
@@ -17,17 +20,30 @@ export class SymmetricKey {
     It formats the encrypted message as follows:
       - base64(<iv><ciphertext><tag>)
   */
-  encrypt = (message, encoding = 'utf8') => {
+  encrypt = (
+    message,
+    plaintextEncoding = 'utf8',
+    ciphertextEncoding = CIPHERTEXT_ENCODING_B64
+  ) => {
+    if (
+      ![CIPHERTEXT_ENCODING_BIN, CIPHERTEXT_ENCODING_B64].includes(
+        ciphertextEncoding
+      )
+    )
+      throw new Error(
+        `Invalid output encoding ${ciphertextEncoding}; should be "${CIPHERTEXT_ENCODING_BIN}" or "${CIPHERTEXT_ENCODING_B64}"`
+      );
     const iv = random.getBytesSync(SALT_LENGTH);
     const ci = cipher.createCipher('AES-GCM', this._key);
 
     // 128 bits is the default MAC tag length that forge uses
     // but we set it explicitly for clarity purposes.
     ci.start({ iv, tagLength: TAG_LENGTH * 8 });
-    ci.update(util.createBuffer(message, encoding));
+    ci.update(util.createBuffer(message, plaintextEncoding));
     ci.finish();
 
     const ciphertext = `${iv}${ci.output.bytes()}${ci.mode.tag.bytes()}`;
+    if (ciphertextEncoding === CIPHERTEXT_ENCODING_BIN) return ciphertext;
     return util.encode64(ciphertext);
   };
 
@@ -37,13 +53,28 @@ export class SymmetricKey {
     Returns the decoded message as a string except if the encoding is set to
     'binary' (in which case the result will be a Buffer or an Uint8Array).
     It accepts a message formatted as follows:
-      - base64(<iv><ciphertext><tag>)
+      - ciphertextEncoding(<iv><ciphertext><tag>)
   */
-  decrypt = (ciphertext, encoding = 'utf8') => {
+  decrypt = (
+    ciphertext,
+    plaintextEncoding = 'utf8',
+    ciphertextEncoding = CIPHERTEXT_ENCODING_B64
+  ) => {
     if (ciphertext.length <= SALT_LENGTH + TAG_LENGTH) {
       throw new Error('wrong ciphertext format');
     }
-    const encryptedBytes = util.decode64(ciphertext);
+    if (
+      ![CIPHERTEXT_ENCODING_BIN, CIPHERTEXT_ENCODING_B64].includes(
+        ciphertextEncoding
+      )
+    )
+      throw new Error(
+        `Invalid input encoding ${ciphertextEncoding}; should be "${CIPHERTEXT_ENCODING_BIN}" or "${CIPHERTEXT_ENCODING_B64}"`
+      );
+    const encryptedBytes =
+      ciphertextEncoding === CIPHERTEXT_ENCODING_BIN
+        ? ciphertext
+        : util.decode64(ciphertext);
     const iv = encryptedBytes.slice(0, SALT_LENGTH);
     const tag = encryptedBytes.slice(-TAG_LENGTH);
     const ct = encryptedBytes.slice(SALT_LENGTH, -TAG_LENGTH);
@@ -54,9 +85,24 @@ export class SymmetricKey {
     if (!de.finish()) {
       throw new Error('error while decrypting');
     }
-    return encoding === 'binary'
-      ? Buffer.from(de.output.data, 'binary')
-      : de.output.toString(encoding);
+
+    if (plaintextEncoding === 'binary') {
+      const decrypted = de.output.data;
+      let res = Buffer.alloc(0);
+      // Encode the decrpyted data per block of 4MB
+      const chunkSize = 1024 * 1024 * 4; // 4MB
+      let index = 0;
+      do {
+        res = Buffer.concat([
+          res,
+          Buffer.from(decrypted.substr(index, chunkSize), 'binary')
+        ]);
+        index += chunkSize;
+      } while (index < decrypted.length);
+
+      return res;
+    }
+    return de.output.toString(plaintextEncoding);
   };
 
   export = () => ({
